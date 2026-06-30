@@ -12,17 +12,19 @@ export default function Login() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [expired, setExpired] = useState(location.state?.expired || false)
   const [isSignUp, setIsSignUp] = useState(location.state?.signUp || false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setExpired(false)
     setLoading(true)
     try {
       if (isSignUp) {
         await signUp(email, password)
-        setSuccess('Account created! Check your email to confirm, then sign in.')
+        setSuccess('Account created! Please login.')
         setIsSignUp(false)
       } else {
         await signIn(email, password)
@@ -35,7 +37,7 @@ export default function Login() {
     }
   }
 
-  const toggleMode = () => { setIsSignUp(!isSignUp); setError(''); setSuccess('') }
+  const toggleMode = () => { setIsSignUp(!isSignUp); setError(''); setSuccess(''); setExpired(false) }
 
   return (
     <div className="login-page">
@@ -60,6 +62,7 @@ export default function Login() {
               <h3>{isSignUp ? 'Create Account' : 'Welcome Back'}</h3>
               <p>{isSignUp ? 'Register to get started.' : 'Sign in to your account.'}</p>
             </div>
+            {expired && <div className="error-msg">Session expired! Please login.</div>}
             {error && <div className="error-msg">{error}</div>}
             {success && <div className="success-msg">{success}</div>}
             <form onSubmit={handleSubmit}>

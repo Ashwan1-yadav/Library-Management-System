@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
@@ -8,6 +9,7 @@ import Fab from '../components/Fab'
 const PAGE_SIZE = 12
 
 export default function Books() {
+  const { user } = useAuth()
   const [books, setBooks] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -21,7 +23,7 @@ export default function Books() {
   const loadBooks = async (p) => {
     setLoading(true)
     setPage(p)
-    let query = supabase.from('books').select('*', { count: 'exact' }).order('title')
+    let query = supabase.from('books').select('*', { count: 'exact' }).eq('admin_id', user.id).order('title')
     if (search) {
       query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,isbn.ilike.%${search}%`)
     }

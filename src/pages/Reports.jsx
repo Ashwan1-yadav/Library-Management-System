@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Download } from 'lucide-react'
 import { useToast } from '../components/Toast'
@@ -19,6 +20,7 @@ function downloadCSV(data, filename, columns) {
 }
 
 export default function Reports() {
+  const { user } = useAuth()
   const [genreData, setGenreData] = useState([])
   const [monthlyBorrows, setMonthlyBorrows] = useState([])
   const [topBooks, setTopBooks] = useState([])
@@ -31,7 +33,7 @@ export default function Reports() {
   }, [])
 
   const loadGenreData = async () => {
-    const { data } = await supabase.from('books').select('genre')
+    const { data } = await supabase.from('books').select('genre').eq('admin_id', user.id)
     if (!data) return
     const counts = {}
     data.forEach((b) => {
@@ -42,7 +44,7 @@ export default function Reports() {
   }
 
   const loadMonthlyBorrows = async () => {
-    const { data } = await supabase.from('borrows').select('borrow_date')
+    const { data } = await supabase.from('borrows').select('borrow_date').eq('admin_id', user.id)
     if (!data) return
     const counts = {}
     data.forEach((b) => {
@@ -59,6 +61,7 @@ export default function Reports() {
     const { data } = await supabase
       .from('borrows')
       .select('books(title)')
+      .eq('admin_id', user.id)
     if (!data) return
     const counts = {}
     data.forEach((b) => {

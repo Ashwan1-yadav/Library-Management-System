@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { Search, DollarSign, CheckCircle } from 'lucide-react'
 import { useToast } from '../components/Toast'
 
 export default function Fines() {
+  const { user } = useAuth()
   const [fines, setFines] = useState([])
   const [filter, setFilter] = useState('unpaid')
   const [search, setSearch] = useState('')
@@ -17,6 +19,7 @@ export default function Fines() {
     let query = supabase
       .from('fines')
       .select('*, borrows!inner(borrow_date, due_date, books(title)), members(name)')
+      .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
 
     if (filter === 'paid') query = query.eq('paid', true)

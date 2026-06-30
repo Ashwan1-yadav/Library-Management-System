@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { Plus, Undo2, Search } from 'lucide-react'
 import { BottomSheet, Modal } from '../components/BottomSheet'
 import { useToast } from '../components/Toast'
@@ -17,6 +18,7 @@ function useMediaQuery(query) {
 }
 
 export default function BorrowReturn() {
+  const { user } = useAuth()
   const [borrows, setBorrows] = useState([])
   const [books, setBooks] = useState([])
   const [members, setMembers] = useState([])
@@ -43,6 +45,7 @@ export default function BorrowReturn() {
     let query = supabase
       .from('borrows')
       .select('*, books(title, author), members(name)')
+      .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
 
     if (f === 'borrowed') query = query.eq('status', 'borrowed')
@@ -62,12 +65,12 @@ export default function BorrowReturn() {
   }
 
   const loadBooks = async () => {
-    const { data } = await supabase.from('books').select('*').gt('available_quantity', 0).order('title')
+    const { data } = await supabase.from('books').select('*').eq('admin_id', user.id).gt('available_quantity', 0).order('title')
     setBooks(data || [])
   }
 
   const loadMembers = async () => {
-    const { data } = await supabase.from('members').select('*').order('name')
+    const { data } = await supabase.from('members').select('*').eq('admin_id', user.id).order('name')
     setMembers(data || [])
   }
 

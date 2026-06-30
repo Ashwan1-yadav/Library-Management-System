@@ -15,10 +15,10 @@ export default function Dashboard() {
   }, [])
 
   const loadStats = async () => {
-    const { count: books } = await supabase.from('books').select('*', { count: 'exact', head: true })
-    const { count: members } = await supabase.from('members').select('*', { count: 'exact', head: true })
-    const { count: borrows } = await supabase.from('borrows').select('*', { count: 'exact', head: true }).eq('status', 'borrowed')
-    const { count: fines } = await supabase.from('fines').select('*', { count: 'exact', head: true }).eq('paid', false)
+    const { count: books } = await supabase.from('books').select('*', { count: 'exact', head: true }).eq('admin_id', user.id)
+    const { count: members } = await supabase.from('members').select('*', { count: 'exact', head: true }).eq('admin_id', user.id)
+    const { count: borrows } = await supabase.from('borrows').select('*', { count: 'exact', head: true }).eq('status', 'borrowed').eq('admin_id', user.id)
+    const { count: fines } = await supabase.from('fines').select('*', { count: 'exact', head: true }).eq('paid', false).eq('admin_id', user.id)
     setStats({ books: books || 0, members: members || 0, borrows: borrows || 0, fines: fines || 0 })
   }
 
@@ -26,6 +26,7 @@ export default function Dashboard() {
     const { data } = await supabase
       .from('borrows')
       .select('*, books(title, cover_image), members(name)')
+      .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
     setRecentBorrows(data || [])
   }

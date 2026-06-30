@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { ArrowLeft, Edit, Book, Calendar, Hash, Layers, FileText } from 'lucide-react'
 
 export default function BookDetail() {
+  const { user } = useAuth()
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -14,7 +16,7 @@ export default function BookDetail() {
 
   const loadBook = async () => {
     setLoading(true)
-    const { data } = await supabase.from('books').select('*').eq('id', id).single()
+    const { data } = await supabase.from('books').select('*').eq('id', id).eq('admin_id', user.id).single()
     setBook(data)
     setLoading(false)
   }

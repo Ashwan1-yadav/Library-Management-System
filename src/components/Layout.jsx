@@ -152,6 +152,7 @@ export default function Layout() {
       .from('fines')
       .select('amount, member_id, members(name)')
       .eq('paid', false)
+      .eq('admin_id', user.id)
 
     if (!data) return
 

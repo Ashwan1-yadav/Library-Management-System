@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
@@ -8,6 +9,7 @@ import Fab from '../components/Fab'
 const PAGE_SIZE = 10
 
 export default function Members() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [members, setMembers] = useState([])
@@ -22,7 +24,7 @@ export default function Members() {
   const loadMembers = async (p) => {
     setLoading(true)
     setPage(p)
-    let query = supabase.from('members').select('*', { count: 'exact' }).order('name')
+    let query = supabase.from('members').select('*', { count: 'exact' }).eq('admin_id', user.id).order('name')
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
     }
