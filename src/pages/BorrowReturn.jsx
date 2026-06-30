@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Plus, Undo2, Search } from 'lucide-react'
-import { BottomSheet } from '../components/BottomSheet'
+import { BottomSheet, Modal } from '../components/BottomSheet'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const handler = (e) => setMatches(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [query])
+  return matches
+}
 
 export default function BorrowReturn() {
   const [borrows, setBorrows] = useState([])
@@ -16,6 +27,8 @@ export default function BorrowReturn() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const toast = useToast()
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const FormWrapper = isMobile ? BottomSheet : Modal
 
   useEffect(() => {
     loadBorrows()
@@ -112,7 +125,7 @@ export default function BorrowReturn() {
         <button className="btn btn-primary hide-mobile" onClick={() => setShowSheet(true)}><Plus size={16} /> New Borrow</button>
       </div>
       <div className="filter-bar">
-        <input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input placeholder="Search by book or member..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadBorrows()} />
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">All</option>
           <option value="borrowed">Borrowed</option>
@@ -120,50 +133,48 @@ export default function BorrowReturn() {
         </select>
         <button className="btn btn-primary" onClick={loadBorrows}><Search size={16} /> Filter</button>
       </div>
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Book</th>
-                <th>Borrow Date</th>
-                <th>Due Date</th>
-                <th>Return Date</th>
-                <th>Status</th>
-                <th>Action</th>
+      <div className="borrow-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Book</th>
+              <th>Borrow Date</th>
+              <th>Due Date</th>
+              <th>Return Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {borrows.length === 0 ? (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No borrow records found</td></tr>
+            ) : borrows.map((b) => (
+              <tr key={b.id}>
+                <td data-label="Member">{b.members?.name}</td>
+                <td data-label="Book">{b.books?.title}</td>
+                <td data-label="Borrow Date">{new Date(b.borrow_date).toLocaleDateString()}</td>
+                <td data-label="Due Date">{new Date(b.due_date).toLocaleDateString()}</td>
+                <td data-label="Return Date">{b.return_date ? new Date(b.return_date).toLocaleDateString() : '-'}</td>
+                <td data-label="Status">
+                  <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`}>
+                    {b.status}
+                  </span>
+                </td>
+                <td data-label="Action">
+                  {b.status === 'borrowed' && (
+                    <button className="btn btn-success btn-sm" onClick={() => handleReturn(b)}>
+                      <Undo2 size={14} /> Return
+                    </button>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {borrows.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No borrow records found</td></tr>
-              ) : borrows.map((b) => (
-                <tr key={b.id}>
-                  <td data-label="Member">{b.members?.name}</td>
-                  <td data-label="Book">{b.books?.title}</td>
-                  <td data-label="Borrow Date">{new Date(b.borrow_date).toLocaleDateString()}</td>
-                  <td data-label="Due Date">{new Date(b.due_date).toLocaleDateString()}</td>
-                  <td data-label="Return Date">{b.return_date ? new Date(b.return_date).toLocaleDateString() : '-'}</td>
-                  <td data-label="Status">
-                    <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`}>
-                      {b.status}
-                    </span>
-                  </td>
-                  <td data-label="Action">
-                    {b.status === 'borrowed' && (
-                      <button className="btn btn-success btn-sm" onClick={() => handleReturn(b)}>
-                        <Undo2 size={14} /> Return
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <BottomSheet open={showSheet} onClose={() => setShowSheet(false)} title="New Borrow">
+      <FormWrapper open={showSheet} onClose={() => setShowSheet(false)} title="New Borrow">
         {error && <div className="error-msg">{error}</div>}
         <form onSubmit={handleBorrow}>
           <div className="form-group">
@@ -189,7 +200,7 @@ export default function BorrowReturn() {
             <button type="button" className="btn btn-secondary" onClick={() => setShowSheet(false)}>Cancel</button>
           </div>
         </form>
-      </BottomSheet>
+      </FormWrapper>
       <Fab onClick={() => setShowSheet(true)} />
     </div>
   )
