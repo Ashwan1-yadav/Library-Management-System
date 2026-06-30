@@ -108,7 +108,7 @@ export default function BookForm() {
     if (!showScanner || !scanning) return
     let cancelled = false
     const init = async () => {
-      await new Promise(r => setTimeout(r, 100))
+      await new Promise(r => requestAnimationFrame(r))
       if (cancelled) return
       const el = document.getElementById('scanner-el')
       if (!el) return
@@ -118,7 +118,7 @@ export default function BookForm() {
         scannerRef.current = scanner
         await scanner.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 300, height: 150 } },
+          { fps: 30, qrbox: { width: 280, height: 200 } },
           (decodedText) => {
             scanner.stop().catch(() => {})
             scannerRef.current = null
