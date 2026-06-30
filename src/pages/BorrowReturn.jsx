@@ -36,21 +36,29 @@ export default function BorrowReturn() {
     loadMembers()
   }, [])
 
-  const loadBorrows = async () => {
+  const loadBorrows = async (opts) => {
+    const s = opts?.search ?? search
+    const f = opts?.filter ?? filter
+
     let query = supabase
       .from('borrows')
       .select('*, books(title, author), members(name)')
       .order('created_at', { ascending: false })
 
-    if (filter === 'borrowed') query = query.eq('status', 'borrowed')
-    else if (filter === 'returned') query = query.eq('status', 'returned')
-
-    if (search) {
-      query = query.or(`books.title.ilike.%${search}%,members.name.ilike.%${search}%`)
-    }
+    if (f === 'borrowed') query = query.eq('status', 'borrowed')
+    else if (f === 'returned') query = query.eq('status', 'returned')
 
     const { data } = await query
-    setBorrows(data || [])
+    let result = data || []
+
+    const q = s.toLowerCase()
+    if (q) {
+      result = result.filter(
+        (b) => b.books?.title?.toLowerCase().includes(q) || b.members?.name?.toLowerCase().includes(q)
+      )
+    }
+
+    setBorrows(result)
   }
 
   const loadBooks = async () => {
@@ -125,8 +133,8 @@ export default function BorrowReturn() {
         <button className="btn btn-primary hide-mobile" onClick={() => setShowSheet(true)}><Plus size={16} /> New Borrow</button>
       </div>
       <div className="filter-bar">
-        <input placeholder="Search by book or member..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadBorrows()} />
-        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <input placeholder="Search by book or member..." value={search} onChange={(e) => { const val = e.target.value; setSearch(val); loadBorrows({ search: val }) }} />
+        <select value={filter} onChange={(e) => { const val = e.target.value; setFilter(val); loadBorrows({ filter: val }) }}>
           <option value="all">All</option>
           <option value="borrowed">Borrowed</option>
           <option value="returned">Returned</option>

@@ -27,7 +27,6 @@ export default function Dashboard() {
       .from('borrows')
       .select('*, books(title, cover_image), members(name)')
       .order('created_at', { ascending: false })
-      .limit(5)
     setRecentBorrows(data || [])
   }
 
@@ -64,8 +63,8 @@ export default function Dashboard() {
               <div className="stat-info">
                 <p className="stat-label">{label}</p>
                 <h3 className="stat-value">{value}</h3>
-              </div>
-            </div>
+          </div>
+        </div>
             <div className="stat-change" style={{ color: change.startsWith('+') ? '#059669' : '#dc2626' }}>
               <TrendingUp size={14} />
               <span>{change}</span>
@@ -75,7 +74,7 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-grid">
-        <div className="card">
+        <div className="card quick-actions-card-standalone">
           <div className="card-header">
             <h2>Quick Actions</h2>
           </div>
