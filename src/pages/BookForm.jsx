@@ -104,29 +104,40 @@ export default function BookForm() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
-  const startScanner = async () => {
-    setShowScanner(true)
-    setScanning(true)
-    try {
-      const scanner = new Html5Qrcode('scanner-el')
-      scannerRef.current = scanner
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 300, height: 150 } },
-        (decodedText) => {
-          scanner.stop().catch(() => {})
-          scannerRef.current = null
+  useEffect(() => {
+    if (!showScanner || !scanning) return
+    let cancelled = false
+    const init = async () => {
+      await new Promise(r => setTimeout(r, 100))
+      if (cancelled) return
+      const el = document.getElementById('scanner-el')
+      if (!el) return
+      try {
+        const scanner = new Html5Qrcode('scanner-el')
+        if (cancelled) return
+        scannerRef.current = scanner
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 300, height: 150 } },
+          (decodedText) => {
+            scanner.stop().catch(() => {})
+            scannerRef.current = null
+            setScanning(false)
+            setShowScanner(false)
+            setForm(prev => ({ ...prev, isbn: decodedText }))
+          },
+          () => {}
+        )
+      } catch {
+        if (!cancelled) {
+          setError('Unable to access camera. Please check permissions.')
           setScanning(false)
-          setShowScanner(false)
-          setForm(prev => ({ ...prev, isbn: decodedText }))
-        },
-        () => {}
-      )
-    } catch {
-      setError('Unable to access camera. Please check permissions.')
-      setScanning(false)
+        }
+      }
     }
-  }
+    init()
+    return () => { cancelled = true }
+  }, [showScanner, scanning])
 
   const stopScanner = async () => {
     if (scannerRef.current) {
@@ -160,7 +171,7 @@ export default function BookForm() {
               <label>ISBN</label>
               <div className="isbn-input-wrap">
                 <input name="isbn" value={form.isbn} onChange={handleChange} />
-                <button type="button" className="btn btn-ghost scan-btn" onClick={startScanner} title="Scan ISBN barcode">
+                <button type="button" className="btn btn-ghost scan-btn" onClick={() => { setShowScanner(true); setScanning(true) }} title="Scan ISBN barcode">
                   <Scan size={18} />
                 </button>
               </div>
