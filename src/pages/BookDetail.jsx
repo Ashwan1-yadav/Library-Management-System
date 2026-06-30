@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { ArrowLeft, Edit, Book, User, Calendar, Hash, Layers, FileText, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Edit, Book, Calendar, Hash, Layers, FileText } from 'lucide-react'
 
 export default function BookDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadBook() }, [id])
+  useEffect(() => { loadBook() }, [id, location.pathname])
 
   const loadBook = async () => {
+    setLoading(true)
     const { data } = await supabase.from('books').select('*').eq('id', id).single()
     setBook(data)
     setLoading(false)
@@ -34,7 +36,7 @@ export default function BookDetail() {
 
   return (
     <div className="book-detail">
-      <button className="btn btn-secondary back-btn" onClick={() => navigate('/books')}>
+      <button className="btn btn-secondary back-btn" onClick={() => navigate('/app/books')}>
         <ArrowLeft size={16} /> Back to Books
       </button>
       <div className="book-detail-content">

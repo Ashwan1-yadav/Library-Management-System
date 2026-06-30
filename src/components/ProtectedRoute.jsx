@@ -6,10 +6,8 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <p>Loading...</p>
-        </div>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading...</p>
       </div>
     )
   }

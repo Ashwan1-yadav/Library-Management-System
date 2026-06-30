@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Download } from 'lucide-react'
+import { useToast } from '../components/Toast'
 
-const COLORS = ['#4a6cf7', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#059669', '#d97706', '#7c3aed']
 
 function downloadCSV(data, filename, columns) {
   const header = columns.join(',')
@@ -21,6 +22,7 @@ export default function Reports() {
   const [genreData, setGenreData] = useState([])
   const [monthlyBorrows, setMonthlyBorrows] = useState([])
   const [topBooks, setTopBooks] = useState([])
+  const toast = useToast()
 
   useEffect(() => {
     loadGenreData()
@@ -70,6 +72,11 @@ export default function Reports() {
     setTopBooks(sorted)
   }
 
+  const handleExport = (data, filename, columns) => {
+    downloadCSV(data, filename, columns)
+    toast.success('Report exported as CSV')
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -79,7 +86,7 @@ export default function Reports() {
         <div className="card">
           <div className="report-header">
             <h2>Books by Genre</h2>
-            <button className="btn btn-ghost btn-sm" onClick={() => downloadCSV(genreData, 'books-by-genre.csv', ['name', 'value'])}>
+            <button className="btn btn-ghost btn-sm" onClick={() => handleExport(genreData, 'books-by-genre.csv', ['name', 'value'])}>
               <Download size={14} /> CSV
             </button>
           </div>
@@ -96,17 +103,17 @@ export default function Reports() {
         <div className="card">
           <div className="report-header">
             <h2>Monthly Borrows</h2>
-            <button className="btn btn-ghost btn-sm" onClick={() => downloadCSV(monthlyBorrows, 'monthly-borrows.csv', ['name', 'count'])}>
+            <button className="btn btn-ghost btn-sm" onClick={() => handleExport(monthlyBorrows, 'monthly-borrows.csv', ['name', 'count'])}>
               <Download size={14} /> CSV
             </button>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthlyBorrows}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#4a6cf7" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+              <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
+              <Bar dataKey="count" fill="#2563eb" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -114,17 +121,17 @@ export default function Reports() {
       <div className="card" style={{ marginTop: 24 }}>
         <div className="report-header">
           <h2>Top 5 Most Borrowed Books</h2>
-          <button className="btn btn-ghost btn-sm" onClick={() => downloadCSV(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
+          <button className="btn btn-ghost btn-sm" onClick={() => handleExport(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
             <Download size={14} /> CSV
           </button>
         </div>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={topBooks} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="name" width={200} />
-            <Tooltip />
-            <Bar dataKey="count" fill="#22c55e" radius={[0, 4, 4, 0]} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+            <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
+            <Bar dataKey="count" fill="#059669" radius={[0, 6, 6, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

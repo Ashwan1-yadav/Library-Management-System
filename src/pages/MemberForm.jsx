@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../components/Toast'
 
 export default function MemberForm() {
   const { id } = useParams()
@@ -8,6 +9,7 @@ export default function MemberForm() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     if (id) loadMember()
@@ -34,7 +36,8 @@ export default function MemberForm() {
     if (saveError) {
       setError(saveError.message)
     } else {
-      navigate('/members')
+      toast.success(id ? 'Member updated successfully' : 'Member added successfully')
+      navigate('/app/members')
     }
   }
 
@@ -69,8 +72,8 @@ export default function MemberForm() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Save'}</button>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate('/members')}>Cancel</button>
+            <button className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : (id ? 'Update' : 'Save')}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate('/app/members')}>Cancel</button>
           </div>
         </form>
       </div>

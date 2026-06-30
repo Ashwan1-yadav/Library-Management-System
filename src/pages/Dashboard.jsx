@@ -32,17 +32,17 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { icon: BookOpen, label: 'Total Books', value: stats.books, color: '#4a6cf7', change: '+12%' },
-    { icon: Users, label: 'Members', value: stats.members, color: '#22c55e', change: '+8%' },
-    { icon: ArrowLeftRight, label: 'Active Borrows', value: stats.borrows, color: '#f59e0b', change: '-3%' },
-    { icon: DollarSign, label: 'Unpaid Fines', value: `$${stats.fines}`, color: '#ef4444', change: '+5%' },
+    { icon: BookOpen, label: 'Total Books', value: stats.books, color: '#2563eb', change: '+12%' },
+    { icon: Users, label: 'Members', value: stats.members, color: '#059669', change: '+8%' },
+    { icon: ArrowLeftRight, label: 'Active Borrows', value: stats.borrows, color: '#d97706', change: '-3%' },
+    { icon: DollarSign, label: 'Unpaid Fines', value: `${stats.fines}`, color: '#dc2626', change: '+5%' },
   ]
 
   const quickActions = [
-    { to: '/books/new', icon: Plus, label: 'Add Book', color: '#4a6cf7' },
-    { to: '/members/new', icon: UserPlus, label: 'Add Member', color: '#22c55e' },
-    { to: '/borrow-return', icon: ArrowLeftRight, label: 'New Borrow', color: '#f59e0b' },
-    { to: '/reports', icon: TrendingUp, label: 'Reports', color: '#8b5cf6' },
+    { to: '/app/books/new', icon: Plus, label: 'Add Book', color: '#2563eb' },
+    { to: '/app/members/new', icon: UserPlus, label: 'Add Member', color: '#059669' },
+    { to: '/app/borrow-return', icon: ArrowLeftRight, label: 'New Borrow', color: '#d97706' },
+    { to: '/app/reports', icon: TrendingUp, label: 'Reports', color: '#7c3aed' },
   ]
 
   return (
@@ -66,7 +66,7 @@ export default function Dashboard() {
                 <h3 className="stat-value">{value}</h3>
               </div>
             </div>
-            <div className="stat-change" style={{ color: change.startsWith('+') ? '#22c55e' : '#ef4444' }}>
+            <div className="stat-change" style={{ color: change.startsWith('+') ? '#059669' : '#dc2626' }}>
               <TrendingUp size={14} />
               <span>{change}</span>
             </div>
@@ -81,7 +81,7 @@ export default function Dashboard() {
           </div>
           <div className="quick-actions-grid">
             {quickActions.map(({ to, icon: Icon, label, color }) => (
-              <Link to={to} key={label} className="quick-action-card" style={{ '--accent': color }}>
+              <Link to={to} key={label} className="quick-action-card">
                 <div className="quick-action-icon" style={{ background: `${color}15`, color }}>
                   <Icon size={20} />
                 </div>
@@ -94,7 +94,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <h2>Recent Borrows</h2>
-            <Link to="/borrow-return" className="btn btn-ghost btn-sm"><Eye size={14} /> View All</Link>
+            <Link to="/app/borrow-return" className="btn btn-ghost btn-sm"><Eye size={14} /> View All</Link>
           </div>
           <div className="recent-borrows">
             {recentBorrows.length === 0 ? (

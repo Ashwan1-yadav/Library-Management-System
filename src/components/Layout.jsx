@@ -5,31 +5,31 @@ import { Book, Users, ArrowLeftRight, DollarSign, BarChart3, LayoutDashboard, Lo
 import { useState, useEffect, useRef } from 'react'
 
 const desktopNavItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/books', icon: Book, label: 'Books' },
-  { to: '/members', icon: Users, label: 'Members' },
-  { to: '/borrow-return', icon: ArrowLeftRight, label: 'Borrow & Return' },
-  { to: '/fines', icon: DollarSign, label: 'Fines' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/app', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/app/books', icon: Book, label: 'Books' },
+  { to: '/app/members', icon: Users, label: 'Members' },
+  { to: '/app/borrow-return', icon: ArrowLeftRight, label: 'Borrow & Return' },
+  { to: '/app/fines', icon: DollarSign, label: 'Fines' },
+  { to: '/app/reports', icon: BarChart3, label: 'Reports' },
 ]
 
 const bottomTabItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Home', end: true },
-  { to: '/books', icon: Book, label: 'Books' },
-  { to: '/members', icon: Users, label: 'Members' },
-  { to: '/borrow-return', icon: ArrowLeftRight, label: 'Borrow' },
+  { to: '/app', icon: LayoutDashboard, label: 'Home', end: true },
+  { to: '/app/books', icon: Book, label: 'Books' },
+  { to: '/app/members', icon: Users, label: 'Members' },
+  { to: '/app/borrow-return', icon: ArrowLeftRight, label: 'Borrow' },
 ]
 
 const pageTitles = {
-  '/': 'Dashboard',
-  '/books': 'Books',
-  '/books/new': 'Add Book',
-  '/members': 'Members',
-  '/members/new': 'Add Member',
-  '/borrow-return': 'Borrow & Return',
-  '/fines': 'Fines',
-  '/reports': 'Reports',
-  '/profile': 'Admin Profile',
+  '/app': 'Dashboard',
+  '/app/books': 'Books',
+  '/app/books/new': 'Add Book',
+  '/app/members': 'Members',
+  '/app/members/new': 'Add Member',
+  '/app/borrow-return': 'Borrow & Return',
+  '/app/fines': 'Fines',
+  '/app/reports': 'Reports',
+  '/app/profile': 'Admin Profile',
 }
 
 function getInitialTheme() {
@@ -40,9 +40,9 @@ function getInitialTheme() {
 
 function MobileMoreMenu({ onClose, onNavigate, onLogout }) {
   const items = [
-    { to: '/fines', icon: DollarSign, label: 'Fines' },
-    { to: '/reports', icon: BarChart3, label: 'Reports' },
-    { to: '/profile', icon: UserCircle, label: 'My Profile' },
+    { to: '/app/fines', icon: DollarSign, label: 'Fines' },
+    { to: '/app/reports', icon: BarChart3, label: 'Reports' },
+    { to: '/app/profile', icon: UserCircle, label: 'My Profile' },
   ]
 
   return (
@@ -68,6 +68,13 @@ function MobileMoreMenu({ onClose, onNavigate, onLogout }) {
   )
 }
 
+const tabRoutes = [
+  '/app',
+  '/app/books',
+  '/app/members',
+  '/app/borrow-return',
+]
+
 export default function Layout() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
@@ -79,10 +86,16 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
   const notifRef = useRef()
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const touchStartTime = useRef(0)
+  const isSwiping = useRef(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('theme', theme)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.content = theme === 'dark' ? '#111827' : '#f5f0e8'
   }, [theme])
 
   useEffect(() => {
@@ -103,6 +116,36 @@ export default function Layout() {
     setSidebarOpen(false)
     setShowMore(false)
   }, [location.pathname])
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    touchStartTime.current = Date.now()
+    isSwiping.current = false
+  }
+
+  const handleTouchMove = (e) => {
+    const dx = Math.abs(e.touches[0].clientX - touchStartX.current)
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
+    if (dx > 10 && dx > dy) {
+      isSwiping.current = true
+    }
+  }
+
+  const handleTouchEnd = (e) => {
+    if (!isSwiping.current) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    const elapsed = Date.now() - touchStartTime.current
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && elapsed < 400) {
+      const currentIdx = tabRoutes.indexOf(location.pathname)
+      if (dx < 0 && currentIdx < tabRoutes.length - 1) {
+        navigate(tabRoutes[currentIdx + 1])
+      } else if (dx > 0 && currentIdx > 0) {
+        navigate(tabRoutes[currentIdx - 1])
+      }
+    }
+  }
 
   const loadNotifications = async () => {
     const { data } = await supabase
@@ -135,10 +178,8 @@ export default function Layout() {
     }
   }
 
-  const basePath = '/' + location.pathname.split('/').filter(Boolean)[0]
+  const basePath = '/' + location.pathname.split('/').filter(Boolean).slice(0, 2).join('/')
   const pageTitle = pageTitles[location.pathname] || pageTitles[basePath] || ''
-
-  const bottomTabActive = bottomTabItems.some(i => i.to === location.pathname) || bottomTabItems.some(i => location.pathname.startsWith(i.to + '/'))
 
   return (
     <div className="layout">
@@ -210,7 +251,7 @@ export default function Layout() {
                     ))
                   )}
                   <div className="notif-footer">
-                    <button className="btn btn-ghost btn-sm btn-block" onClick={() => navigate('/fines')}>View All Fines</button>
+                    <button className="btn btn-ghost btn-sm btn-block" onClick={() => navigate('/app/fines')}>View All Fines</button>
                   </div>
                 </div>
               )}
@@ -233,7 +274,7 @@ export default function Layout() {
                     <span className="user-menu-email">{user?.email}</span>
                   </div>
                   <hr />
-                  <NavLink to="/profile" className="user-menu-item profile-link" onClick={() => setShowUserMenu(false)}>
+                  <NavLink to="/app/profile" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
                     <UserCircle size={14} /> My Profile
                   </NavLink>
                   <button className="user-menu-item danger" onClick={handleLogout}>
@@ -244,8 +285,15 @@ export default function Layout() {
             </div>
           </div>
         </header>
-        <main className="main-content">
-          <Outlet />
+        <main
+          className="main-content"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div key={location.pathname} className="page-transition">
+            <Outlet />
+          </div>
         </main>
         {!sidebarOpen && (
           <nav className="bottom-tabs">
@@ -255,7 +303,7 @@ export default function Layout() {
                 <span>{label}</span>
               </NavLink>
             ))}
-            <button className={`bottom-tab ${!bottomTabActive && !['/fines', '/reports', '/profile'].includes(location.pathname) ? '' : showMore ? 'active' : ''}`} onClick={() => setShowMore(true)}>
+            <button className={`bottom-tab ${['/app/fines', '/app/reports', '/app/profile'].includes(location.pathname) ? 'active' : ''}`} onClick={() => setShowMore(true)}>
               <MoreHorizontal size={22} />
               <span>More</span>
             </button>

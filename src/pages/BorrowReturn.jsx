@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Plus, Undo2, Search } from 'lucide-react'
+import { BottomSheet } from '../components/BottomSheet'
+import { useToast } from '../components/Toast'
+import Fab from '../components/Fab'
 
 export default function BorrowReturn() {
   const [borrows, setBorrows] = useState([])
   const [books, setBooks] = useState([])
   const [members, setMembers] = useState([])
-  const [showModal, setShowModal] = useState(false)
+  const [showSheet, setShowSheet] = useState(false)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ book_id: '', member_id: '', due_date: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     loadBorrows()
@@ -57,8 +61,13 @@ export default function BorrowReturn() {
     if (err) {
       setError(err.message)
     } else {
-      setShowModal(false)
+      const { data: book } = await supabase.from('books').select('available_quantity').eq('id', form.book_id).single()
+      if (book) {
+        await supabase.from('books').update({ available_quantity: book.available_quantity - 1 }).eq('id', form.book_id)
+      }
+      setShowSheet(false)
       setForm({ book_id: '', member_id: '', due_date: '' })
+      toast.success('Book borrowed successfully')
       loadBorrows()
       loadBooks()
     }
@@ -72,6 +81,10 @@ export default function BorrowReturn() {
       .eq('id', borrow.id)
 
     if (!err) {
+      const { data: book } = await supabase.from('books').select('available_quantity, quantity').eq('id', borrow.book_id).single()
+      if (book && book.available_quantity < book.quantity) {
+        await supabase.from('books').update({ available_quantity: book.available_quantity + 1 }).eq('id', borrow.book_id)
+      }
       const dueDate = new Date(borrow.due_date)
       const returnDate = new Date()
       if (returnDate > dueDate) {
@@ -82,7 +95,11 @@ export default function BorrowReturn() {
           member_id: borrow.member_id,
           amount: fineAmount,
         })
+        if (daysLate > 0) {
+          toast.info(`Late return: $${fineAmount} fine applied (${daysLate} days)`)
+        }
       }
+      toast.success('Book returned successfully')
       loadBorrows()
       loadBooks()
     }
@@ -92,10 +109,10 @@ export default function BorrowReturn() {
     <div>
       <div className="page-header">
         <h1>Borrow & Return</h1>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} /> New Borrow</button>
+        <button className="btn btn-primary hide-mobile" onClick={() => setShowSheet(true)}><Plus size={16} /> New Borrow</button>
       </div>
       <div className="filter-bar">
-        <input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: 1, padding: '10px 16px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14 }} />
+        <input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">All</option>
           <option value="borrowed">Borrowed</option>
@@ -118,7 +135,9 @@ export default function BorrowReturn() {
               </tr>
             </thead>
             <tbody>
-              {borrows.map((b) => (
+              {borrows.length === 0 ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No borrow records found</td></tr>
+              ) : borrows.map((b) => (
                 <tr key={b.id}>
                   <td data-label="Member">{b.members?.name}</td>
                   <td data-label="Book">{b.books?.title}</td>
@@ -132,7 +151,7 @@ export default function BorrowReturn() {
                   </td>
                   <td data-label="Action">
                     {b.status === 'borrowed' && (
-                      <button className="btn btn-success" style={{ padding: '6px 12px' }} onClick={() => handleReturn(b)}>
+                      <button className="btn btn-success btn-sm" onClick={() => handleReturn(b)}>
                         <Undo2 size={14} /> Return
                       </button>
                     )}
@@ -144,38 +163,34 @@ export default function BorrowReturn() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>New Borrow</h2>
-            {error && <div className="error-msg">{error}</div>}
-            <form onSubmit={handleBorrow}>
-              <div className="form-group">
-                <label>Member *</label>
-                <select name="member_id" value={form.member_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
-                  <option value="">Select member...</option>
-                  {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Book *</label>
-                <select name="book_id" value={form.book_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
-                  <option value="">Select book...</option>
-                  {books.map((b) => <option key={b.id} value={b.id}>{b.title} ({b.available_quantity} avail)</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Due Date *</label>
-                <input type="date" name="due_date" value={form.due_date} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required />
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-primary" disabled={loading}>{loading ? 'Processing...' : 'Borrow'}</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              </div>
-            </form>
+      <BottomSheet open={showSheet} onClose={() => setShowSheet(false)} title="New Borrow">
+        {error && <div className="error-msg">{error}</div>}
+        <form onSubmit={handleBorrow}>
+          <div className="form-group">
+            <label>Member *</label>
+            <select name="member_id" value={form.member_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
+              <option value="">Select member...</option>
+              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
           </div>
-        </div>
-      )}
+          <div className="form-group">
+            <label>Book *</label>
+            <select name="book_id" value={form.book_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
+              <option value="">Select book...</option>
+              {books.map((b) => <option key={b.id} value={b.id}>{b.title} ({b.available_quantity} avail)</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Due Date *</label>
+            <input type="date" name="due_date" value={form.due_date} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required />
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button className="btn btn-primary" disabled={loading}>{loading ? 'Processing...' : 'Borrow'}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setShowSheet(false)}>Cancel</button>
+          </div>
+        </form>
+      </BottomSheet>
+      <Fab onClick={() => setShowSheet(true)} />
     </div>
   )
 }

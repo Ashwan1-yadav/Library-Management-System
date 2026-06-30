@@ -1,16 +1,23 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Upload, X, Image } from 'lucide-react'
+import { Upload, X, Scan } from 'lucide-react'
+import { Html5Qrcode } from 'html5-qrcode'
+import { Modal } from '../components/BottomSheet'
+import { useToast } from '../components/Toast'
 
 export default function BookForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const fileInput = useRef()
+  const scannerRef = useRef(null)
   const [form, setForm] = useState({ title: '', author: '', isbn: '', published_year: '', genre: '', quantity: 1, cover_image: '', description: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     if (id) loadBook()
@@ -90,11 +97,45 @@ export default function BookForm() {
     if (saveError) {
       setError(saveError.message)
     } else {
-      navigate('/books')
+      toast.success(id ? 'Book updated successfully' : 'Book added successfully')
+      navigate('/app/books')
     }
   }
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+
+  const startScanner = async () => {
+    setShowScanner(true)
+    setScanning(true)
+    try {
+      const scanner = new Html5Qrcode('scanner-el')
+      scannerRef.current = scanner
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 300, height: 150 } },
+        (decodedText) => {
+          scanner.stop().catch(() => {})
+          scannerRef.current = null
+          setScanning(false)
+          setShowScanner(false)
+          setForm(prev => ({ ...prev, isbn: decodedText }))
+        },
+        () => {}
+      )
+    } catch {
+      setError('Unable to access camera. Please check permissions.')
+      setScanning(false)
+    }
+  }
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try { await scannerRef.current.stop() } catch {}
+      scannerRef.current = null
+    }
+    setScanning(false)
+    setShowScanner(false)
+  }
 
   return (
     <div>
@@ -117,7 +158,12 @@ export default function BookForm() {
           <div className="form-row">
             <div className="form-group">
               <label>ISBN</label>
-              <input name="isbn" value={form.isbn} onChange={handleChange} />
+              <div className="isbn-input-wrap">
+                <input name="isbn" value={form.isbn} onChange={handleChange} />
+                <button type="button" className="btn btn-ghost scan-btn" onClick={startScanner} title="Scan ISBN barcode">
+                  <Scan size={18} />
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label>Published Year</label>
@@ -171,11 +217,16 @@ export default function BookForm() {
             <textarea name="description" value={form.description} onChange={handleChange} rows={4} placeholder="Book description..." />
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="btn btn-primary" disabled={loading || uploading}>{loading ? 'Saving...' : 'Save'}</button>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate('/books')}>Cancel</button>
+            <button className="btn btn-primary" disabled={loading || uploading}>{loading ? 'Saving...' : (id ? 'Update' : 'Save')}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate('/app/books')}>Cancel</button>
           </div>
         </form>
       </div>
+
+      <Modal open={showScanner} onClose={stopScanner} title="Scan ISBN Barcode">
+        <div id="scanner-el" style={{ width: '100%', aspectRatio: '4/3', background: '#000', borderRadius: 8, overflow: 'hidden' }} />
+        {scanning && <p style={{ textAlign: 'center', marginTop: 12, color: 'var(--text-muted)', fontSize: 14 }}>Position the barcode in the frame</p>}
+      </Modal>
     </div>
   )
 }

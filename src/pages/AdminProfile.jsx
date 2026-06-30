@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Camera, Upload, Save, Mail, User, Phone, MapPin } from 'lucide-react'
+import { Camera, Save, Mail, Phone, MapPin } from 'lucide-react'
+import { useToast } from '../components/Toast'
 
 export default function AdminProfile() {
   const { user, profile, updateProfile } = useAuth()
@@ -11,7 +12,7 @@ export default function AdminProfile() {
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const toast = useToast()
 
   useEffect(() => {
     if (profile) {
@@ -44,6 +45,7 @@ export default function AdminProfile() {
         if (data?.publicUrl) {
           setAvatar(data.publicUrl)
           await updateProfile({ avatar_url: data.publicUrl })
+          toast.success('Profile photo updated')
         }
       }
     } catch (err) {
@@ -55,11 +57,10 @@ export default function AdminProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
     setSaving(true)
     try {
       await updateProfile(form)
-      setSuccess('Profile updated successfully')
+      toast.success('Profile updated successfully')
     } catch (err) {
       setError(err.message)
     }
@@ -69,7 +70,7 @@ export default function AdminProfile() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const placeholderAvatar = 'data:image/svg+xml,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect fill="#eef0ff" width="120" height="120" rx="60"/><text fill="#4a6cf7" font-size="40" font-family="sans-serif" x="50%" y="50%" text-anchor="middle" dominant-baseline="central">' + (user?.email?.charAt(0).toUpperCase() || 'A') + '</text></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect fill="#eaeaea" width="120" height="120" rx="60"/><text fill="#2d2d2d" font-size="40" font-family="sans-serif" x="50%" y="50%" text-anchor="middle" dominant-baseline="central">' + (user?.email?.charAt(0).toUpperCase() || 'A') + '</text></svg>'
   )
 
   return (
@@ -112,7 +113,6 @@ export default function AdminProfile() {
         <div className="card profile-form-card">
           <h2>Edit Profile</h2>
           {error && <div className="error-msg">{error}</div>}
-          {success && <div className="success-msg">{success}</div>}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Full Name</label>

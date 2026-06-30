@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Plus, Search, Edit, Trash2, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library } from 'lucide-react'
+import { useToast } from '../components/Toast'
+import Fab from '../components/Fab'
 
 const PAGE_SIZE = 12
 
@@ -12,8 +14,9 @@ export default function Books() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const navigate = useNavigate()
-
-  useEffect(() => { loadBooks(1) }, [])
+  const location = useLocation()
+  const toast = useToast()
+  const visibleRef = useRef(false)
 
   const loadBooks = async (p) => {
     setLoading(true)
@@ -30,12 +33,21 @@ export default function Books() {
     setLoading(false)
   }
 
+  useEffect(() => { loadBooks(1) }, [])
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadBooks(1) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
   const handleSearch = () => loadBooks(1)
 
   const handleDelete = async (e, id) => {
     e.stopPropagation()
     if (!confirm('Delete this book?')) return
     await supabase.from('books').delete().eq('id', id)
+    toast.success('Book deleted')
     loadBooks(books.length === 1 && page > 1 ? page - 1 : page)
   }
 
@@ -49,7 +61,7 @@ export default function Books() {
     <div>
       <div className="page-header">
         <h1>Books</h1>
-        <Link to="/books/new" className="btn btn-primary"><Plus size={16} /> Add Book</Link>
+        <Link to="/app/books/new" className="btn btn-primary hide-mobile"><Plus size={16} /> Add Book</Link>
       </div>
       <div className="search-bar">
         <input placeholder="Search by title, author or ISBN..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
@@ -61,7 +73,7 @@ export default function Books() {
         </div>
       ) : books.length === 0 ? (
         <div className="empty-state">
-          <BookOpen size={48} />
+          <Library size={48} />
           <h3>No books found</h3>
           <p>Try a different search or add a new book.</p>
         </div>
@@ -69,7 +81,7 @@ export default function Books() {
         <>
           <div className="books-grid">
             {books.map(book => (
-              <div key={book.id} className="book-card" onClick={() => navigate(`/books/${book.id}`)}>
+              <div key={book.id} className="book-card" onClick={() => navigate(`/app/books/${book.id}`)}>
                 <div className="book-card-img">
                   <img src={book.cover_image || placeholderImg} alt={book.title} loading="lazy" onError={(e) => { e.target.src = placeholderImg }} />
                 </div>
@@ -84,7 +96,7 @@ export default function Books() {
                   </div>
                 </div>
                 <div className="book-card-actions" onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
+                  <Link to={`/app/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
                   <button className="btn-icon danger" onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={16} /></button>
                 </div>
               </div>
@@ -99,6 +111,7 @@ export default function Books() {
           )}
         </>
       )}
+      <Fab onClick={() => navigate('/app/books/new')} />
     </div>
   )
 }

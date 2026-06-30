@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Search } from 'lucide-react'
+import { Search, DollarSign, CheckCircle } from 'lucide-react'
+import { useToast } from '../components/Toast'
 
 export default function Fines() {
   const [fines, setFines] = useState([])
   const [filter, setFilter] = useState('unpaid')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const toast = useToast()
 
   useEffect(() => { loadFines() }, [])
 
@@ -31,6 +33,7 @@ export default function Fines() {
 
   const handlePay = async (id) => {
     await supabase.from('fines').update({ paid: true, paid_date: new Date().toISOString().split('T')[0] }).eq('id', id)
+    toast.success('Fine marked as paid')
     loadFines()
   }
 
@@ -43,14 +46,19 @@ export default function Fines() {
       </div>
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-info">
-            <h3>&#8377;{totalUnpaid.toFixed(2)}</h3>
-            <p>Total Unpaid Fines</p>
+          <div className="stat-card-left">
+            <div className="stat-icon-circle" style={{ background: '#dc262615', color: '#dc2626' }}>
+              <DollarSign size={22} />
+            </div>
+            <div className="stat-info">
+              <p className="stat-label">Total Unpaid Fines</p>
+              <h3 className="stat-value">₹{totalUnpaid.toFixed(2)}</h3>
+            </div>
           </div>
         </div>
       </div>
       <div className="filter-bar">
-        <input placeholder="Search by member or book..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: 1, padding: '10px 16px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14 }} />
+        <input placeholder="Search by member or book..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="unpaid">Unpaid</option>
           <option value="paid">Paid</option>
@@ -82,7 +90,7 @@ export default function Fines() {
                   <td data-label="Member">{f.members?.name}</td>
                   <td data-label="Book">{f.borrows?.books?.title}</td>
                   <td data-label="Due Date">{new Date(f.borrows?.due_date).toLocaleDateString()}</td>
-                  <td data-label="Amount">&#8377;{parseFloat(f.amount).toFixed(2)}</td>
+                  <td data-label="Amount">₹{parseFloat(f.amount).toFixed(2)}</td>
                   <td data-label="Status">
                     <span className={`badge ${f.paid ? 'badge-success' : 'badge-danger'}`}>
                       {f.paid ? 'Paid' : 'Unpaid'}
@@ -91,8 +99,8 @@ export default function Fines() {
                   <td data-label="Paid Date">{f.paid_date ? new Date(f.paid_date).toLocaleDateString() : '-'}</td>
                   <td data-label="Action">
                     {!f.paid && (
-                      <button className="btn btn-success" style={{ padding: '6px 12px' }} onClick={() => handlePay(f.id)}>
-                        Pay Now
+                      <button className="btn btn-success btn-sm" onClick={() => handlePay(f.id)}>
+                        <CheckCircle size={14} /> Pay Now
                       </button>
                     )}
                   </td>
