@@ -12,6 +12,10 @@ import BookForm from './pages/BookForm'
 import Members from './pages/Members'
 import MemberForm from './pages/MemberForm'
 import BorrowReturn from './pages/BorrowReturn'
+import BorrowForm from './pages/BorrowForm'
+import BorrowDetail from './pages/BorrowDetail'
+import MemberDetail from './pages/MemberDetail'
+import FineDetail from './pages/FineDetail'
 import Fines from './pages/Fines'
 import Reports from './pages/Reports'
 import AdminProfile from './pages/AdminProfile'
@@ -32,9 +36,13 @@ export default function App() {
             <Route path="books/:id/edit" element={<BookForm />} />
             <Route path="members" element={<Members />} />
             <Route path="members/new" element={<MemberForm />} />
+            <Route path="members/:id" element={<MemberDetail />} />
             <Route path="members/:id/edit" element={<MemberForm />} />
             <Route path="borrow-return" element={<BorrowReturn />} />
+            <Route path="borrow-new" element={<BorrowForm />} />
+            <Route path="borrows/:id" element={<BorrowDetail />} />
             <Route path="fines" element={<Fines />} />
+            <Route path="fines/:id" element={<FineDetail />} />
             <Route path="reports" element={<Reports />} />
             <Route path="profile" element={<AdminProfile />} />
           </Route>

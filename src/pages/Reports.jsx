@@ -7,6 +7,16 @@ import { useToast } from '../components/Toast'
 
 const COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#059669', '#d97706', '#7c3aed']
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 function downloadCSV(data, filename, columns) {
   const header = columns.join(',')
   const rows = data.map(row => columns.map(c => `"${row[c] ?? ''}"`).join(',')).join('\n')
@@ -21,16 +31,23 @@ function downloadCSV(data, filename, columns) {
 
 export default function Reports() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [genreData, setGenreData] = useState([])
   const [monthlyBorrows, setMonthlyBorrows] = useState([])
   const [topBooks, setTopBooks] = useState([])
+  const [loading, setLoading] = useState(true)
   const toast = useToast()
+  const chartHeight = isMobile ? 220 : 300
 
   useEffect(() => {
-    loadGenreData()
-    loadMonthlyBorrows()
-    loadTopBooks()
+    loadAll()
   }, [])
+
+  const loadAll = async () => {
+    setLoading(true)
+    await Promise.all([loadGenreData(), loadMonthlyBorrows(), loadTopBooks()])
+    setLoading(false)
+  }
 
   const loadGenreData = async () => {
     const { data } = await supabase.from('books').select('genre').eq('admin_id', user.id)
@@ -85,59 +102,80 @@ export default function Reports() {
       <div className="page-header">
         <h1>Reports</h1>
       </div>
-      <div className="reports-grid">
-        <div className="card">
-          <div className="report-header">
-            <h2>Books by Genre</h2>
-            <button className="btn btn-ghost btn-sm" onClick={() => handleExport(genreData, 'books-by-genre.csv', ['name', 'value'])}>
-              <Download size={14} /> CSV
-            </button>
+      {loading ? (
+        <div className="list-cards">
+          {[1,2,3].map(i => (
+            <div key={i} className="list-card" style={{ pointerEvents: 'none' }}>
+              <div style={{ flex: 1 }}>
+                <div className="skeleton-bar" style={{ width: '50%', marginBottom: 8 }} />
+                <div className="skeleton-chart" style={{ height: 200 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="reports-grid">
+            <div className="card">
+              <div className="report-header">
+                <h2>Books by Genre</h2>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleExport(genreData, 'books-by-genre.csv', ['name', 'value'])}>
+                  <Download size={14} /> CSV
+                </button>
+              </div>
+              <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <PieChart>
+                    <Pie data={genreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={isMobile ? 70 : 100} label={!isMobile}>
+                      {genreData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Legend wrapperStyle={isMobile ? { fontSize: 10 } : undefined} />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="card">
+              <div className="report-header">
+                <h2>Monthly Borrows</h2>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleExport(monthlyBorrows, 'monthly-borrows.csv', ['name', 'count'])}>
+                  <Download size={14} /> CSV
+                </button>
+              </div>
+              <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <BarChart data={monthlyBorrows} margin={isMobile ? { top: 8, right: 4, left: -16, bottom: 4 } : { top: 8, right: 8, left: -8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" tick={{ fontSize: isMobile ? 9 : 12, fill: 'var(--text-muted)' }} interval={isMobile ? 1 : 0} />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 12, fill: 'var(--text-muted)' }} width={isMobile ? 30 : 40} />
+                    <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
+                    <Bar dataKey="count" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={genreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                {genreData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="card">
-          <div className="report-header">
-            <h2>Monthly Borrows</h2>
-            <button className="btn btn-ghost btn-sm" onClick={() => handleExport(monthlyBorrows, 'monthly-borrows.csv', ['name', 'count'])}>
-              <Download size={14} /> CSV
-            </button>
+          <div className="card" style={{ marginTop: isMobile ? 12 : 24 }}>
+            <div className="report-header">
+              <h2>Top 5 Most Borrowed Books</h2>
+              <button className="btn btn-ghost btn-sm" onClick={() => handleExport(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
+                <Download size={14} /> CSV
+              </button>
+            </div>
+            <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <BarChart data={topBooks} layout="vertical" margin={isMobile ? { top: 8, right: 4, left: 0, bottom: 4 } : { top: 8, right: 8, left: -8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 12, fill: 'var(--text-muted)' }} />
+                    <YAxis type="category" dataKey="name" width={isMobile ? 90 : 200} tick={{ fontSize: isMobile ? 9 : 12, fill: 'var(--text-muted)' }} />
+                    <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
+                    <Bar dataKey="count" fill="#059669" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyBorrows}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-              <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
-              <Bar dataKey="count" fill="#2563eb" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div className="card" style={{ marginTop: 24 }}>
-        <div className="report-header">
-          <h2>Top 5 Most Borrowed Books</h2>
-          <button className="btn btn-ghost btn-sm" onClick={() => handleExport(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
-            <Download size={14} /> CSV
-          </button>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={topBooks} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-            <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
-            <Bar dataKey="count" fill="#059669" radius={[0, 6, 6, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        </>
+      )}
     </div>
   )
 }

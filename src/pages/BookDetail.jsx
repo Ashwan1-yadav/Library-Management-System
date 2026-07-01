@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { ArrowLeft, Edit, Book, Calendar, Hash, Layers, FileText } from 'lucide-react'
+import { ArrowLeft, Edit, Book, Calendar, Hash, Layers, FileText, ArrowRight } from 'lucide-react'
+import BorrowBook from '../components/BorrowBook'
 
 export default function BookDetail() {
   const { user } = useAuth()
@@ -11,6 +12,7 @@ export default function BookDetail() {
   const location = useLocation()
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showBorrow, setShowBorrow] = useState(false)
 
   useEffect(() => { loadBook() }, [id, location.pathname])
 
@@ -78,10 +80,14 @@ export default function BookDetail() {
             ))}
           </div>
           <div className="detail-actions">
-            <Link to={`/books/${book.id}/edit`} className="btn btn-warning"><Edit size={16} /> Edit Book</Link>
+            {book.available_quantity > 0 && (
+              <button className="btn btn-primary" onClick={() => setShowBorrow(true)}><ArrowRight size={16} /> Borrow</button>
+            )}
+            <Link to={`/app/books/${book.id}/edit`} className="btn btn-warning"><Edit size={16} /> Edit Book</Link>
           </div>
         </div>
       </div>
+      <BorrowBook open={showBorrow} onClose={() => setShowBorrow(false)} book={book} />
     </div>
   )
 }

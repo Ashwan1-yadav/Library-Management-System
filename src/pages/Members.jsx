@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Users } from 'lucide-react'
-import { useToast } from '../components/Toast'
+import { Plus, Search, ChevronLeft, ChevronRight, Users, Mail, Phone, Calendar } from 'lucide-react'
 import Fab from '../components/Fab'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 8
 
 export default function Members() {
   const { user } = useAuth()
@@ -17,7 +16,6 @@ export default function Members() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
-  const toast = useToast()
 
   useEffect(() => { loadMembers(1) }, [location.pathname])
 
@@ -36,14 +34,9 @@ export default function Members() {
     setLoading(false)
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this member?')) return
-    await supabase.from('members').delete().eq('id', id)
-    toast.success('Member deleted')
-    loadMembers(members.length === 1 && page > 1 ? page - 1 : page)
-  }
-
   const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  const avatarColors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
 
   return (
     <div>
@@ -51,58 +44,62 @@ export default function Members() {
         <h1>Members</h1>
         <Link to="/app/members/new" className="btn btn-primary hide-mobile"><Plus size={16} /> Add Member</Link>
       </div>
-      <div className="search-bar">
+      <div className="filter-bar">
         <input placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadMembers(1)} />
         <button className="btn btn-primary" onClick={() => loadMembers(1)}><Search size={16} /> Search</button>
       </div>
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Membership Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>Loading...</td></tr>
-            ) : members.length === 0 ? (
-              <tr><td colSpan={5}>
-                <div className="empty-state">
-                  <Users size={48} />
-                  <h3>No members found</h3>
-                  <p>Try a different search or add a new member.</p>
-                </div>
-              </td></tr>
-            ) : members.map((m) => (
-              <tr key={m.id}>
-                <td data-label="Name" style={{ fontWeight: 500 }}>{m.name}</td>
-                <td data-label="Email">{m.email}</td>
-                <td data-label="Phone">{m.phone || '-'}</td>
-                <td data-label="Joined">{new Date(m.membership_date).toLocaleDateString()}</td>
-                <td data-label="Actions">
-                  <div className="actions">
-                    <Link to={`/app/members/${m.id}/edit`} className="btn btn-warning btn-sm" title="Edit">
-                      <Edit size={14} />
-                    </Link>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(m.id)} title="Delete">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      {loading ? (
+        <div className="list-cards">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="list-card" style={{ pointerEvents: 'none' }}>
+              <div className="skeleton-circle" style={{ width: 44, height: 44 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton-bar" style={{ width: '70%', marginBottom: 6 }} />
+                <div className="skeleton-bar" style={{ width: '50%', height: 10 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : members.length === 0 ? (
+        <div className="empty-state">
+          <Users size={48} />
+          <h3>No members found</h3>
+          <p>Try a different search or add a new member.</p>
+        </div>
+      ) : (
+        <div className="list-cards">
+          {members.map((m, i) => (
+            <div key={m.id} className="list-card" onClick={() => navigate(`/app/members/${m.id}`)}>
+              <div className="list-card-avatar" style={{ background: avatarColors[i % avatarColors.length] }}>
+                {m.name?.charAt(0)?.toUpperCase()}
+              </div>
+              <div className="list-card-info">
+                <p className="list-card-title">{m.name}</p>
+                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Mail size={11} /> {m.email}
+                </p>
+                {m.phone && (
+                  <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Phone size={11} /> {m.phone}
+                  </p>
+                )}
+              </div>
+              <div className="list-card-meta">
+                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Calendar size={11} /> {new Date(m.membership_date).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {totalPages > 1 && (
         <div className="pagination">
-          <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => loadMembers(page - 1)}><ChevronLeft size={16} /> Prev</button>
+          <button className="pagination-btn" disabled={page <= 1} onClick={() => loadMembers(page - 1)}><ChevronLeft size={16} /> Prev</button>
           <span className="pagination-info">Page {page} of {totalPages} ({total} members)</span>
-          <button className="btn btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => loadMembers(page + 1)}>Next <ChevronRight size={16} /></button>
+          <button className="pagination-btn" disabled={page >= totalPages} onClick={() => loadMembers(page + 1)}>Next <ChevronRight size={16} /></button>
         </div>
       )}
       <Fab onClick={() => navigate('/app/members/new')} />

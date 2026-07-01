@@ -1,50 +1,49 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Plus, Undo2, Search } from 'lucide-react'
-import { BottomSheet, Modal } from '../components/BottomSheet'
+import { Plus, Undo2, Book, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
+import ConfirmDialog from '../components/ConfirmDialog'
 
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
+const PAGE_SIZE = 8
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
   useEffect(() => {
-    const mq = window.matchMedia(query)
-    const handler = (e) => setMatches(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [query])
-  return matches
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
 }
 
 export default function BorrowReturn() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [borrows, setBorrows] = useState([])
-  const [books, setBooks] = useState([])
-  const [members, setMembers] = useState([])
-  const [showSheet, setShowSheet] = useState(false)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [form, setForm] = useState({ book_id: '', member_id: '', due_date: '' })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [returnConfirm, setReturnConfirm] = useState(null)
+  const [page, setPage] = useState(1)
   const toast = useToast()
-  const isMobile = useMediaQuery('(max-width: 768px)')
-  const FormWrapper = isMobile ? BottomSheet : Modal
 
   useEffect(() => {
     loadBorrows()
-    loadBooks()
-    loadMembers()
   }, [])
 
   const loadBorrows = async (opts) => {
     const s = opts?.search ?? search
     const f = opts?.filter ?? filter
+    setPage(1)
+    setLoading(true)
 
     let query = supabase
       .from('borrows')
-      .select('*, books(title, author), members(name)')
+      .select('*, books(title, author, cover_image), members(name, email)')
       .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -62,39 +61,6 @@ export default function BorrowReturn() {
     }
 
     setBorrows(result)
-  }
-
-  const loadBooks = async () => {
-    const { data } = await supabase.from('books').select('*').eq('admin_id', user.id).gt('available_quantity', 0).order('title')
-    setBooks(data || [])
-  }
-
-  const loadMembers = async () => {
-    const { data } = await supabase.from('members').select('*').eq('admin_id', user.id).order('name')
-    setMembers(data || [])
-  }
-
-  const handleBorrow = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    const { error: err } = await supabase.from('borrows').insert({
-      ...form,
-      borrow_date: new Date().toISOString().split('T')[0],
-    })
-    if (err) {
-      setError(err.message)
-    } else {
-      const { data: book } = await supabase.from('books').select('available_quantity').eq('id', form.book_id).single()
-      if (book) {
-        await supabase.from('books').update({ available_quantity: book.available_quantity - 1 }).eq('id', form.book_id)
-      }
-      setShowSheet(false)
-      setForm({ book_id: '', member_id: '', due_date: '' })
-      toast.success('Book borrowed successfully')
-      loadBorrows()
-      loadBooks()
-    }
     setLoading(false)
   }
 
@@ -125,15 +91,80 @@ export default function BorrowReturn() {
       }
       toast.success('Book returned successfully')
       loadBorrows()
-      loadBooks()
     }
   }
+
+  const renderCard = (b) => (
+    <div key={b.id} className={isMobile ? 'borrow-card-mobile' : 'list-card'} onClick={() => navigate(`/app/borrows/${b.id}`)}>
+      {b.books?.cover_image ? (
+        <img src={b.books.cover_image} alt="" style={{ width: isMobile ? 36 : 44, height: isMobile ? 50 : 60, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+      ) : (
+        <div className="list-card-avatar" style={{ background: '#2563eb' }}>
+          <Book size={isMobile ? 16 : 20} />
+        </div>
+      )}
+      {isMobile ? (
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.books?.title}</span>
+            <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: 9, padding: '2px 6px', flexShrink: 0 }}>
+              {b.status}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <User size={10} /> {b.members?.name}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Calendar size={10} /> Due: {new Date(b.due_date).toLocaleDateString()}
+            </span>
+            {b.status === 'borrowed' && (
+              <button
+                className="btn btn-success btn-sm"
+                onClick={(e) => { e.stopPropagation(); setReturnConfirm(b) }}
+                style={{ fontSize: 11, padding: '4px 10px', minHeight: 0, borderRadius: 8 }}
+              >
+                <Undo2 size={10} /> Return
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="list-card-info">
+            <p className="list-card-title">{b.books?.title}</p>
+            <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <User size={11} /> {b.members?.name} · {b.members?.email}
+            </p>
+            <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Calendar size={11} /> Due: {new Date(b.due_date).toLocaleDateString()}
+              {b.return_date && ` · Returned: ${new Date(b.return_date).toLocaleDateString()}`}
+            </p>
+          </div>
+          <div className="list-card-meta">
+            <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`}>
+              {b.status}
+            </span>
+            {b.status === 'borrowed' && (
+              <button
+                className="btn btn-success btn-sm"
+                style={{ marginTop: 4 }}
+                onClick={(e) => { e.stopPropagation(); setReturnConfirm(b) }}
+              >
+                <Undo2 size={12} /> Return
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
 
   return (
     <div>
       <div className="page-header">
         <h1>Borrow & Return</h1>
-        <button className="btn btn-primary hide-mobile" onClick={() => setShowSheet(true)}><Plus size={16} /> New Borrow</button>
+        <button className="btn btn-primary hide-mobile" onClick={() => navigate('/app/borrow-new')}><Plus size={16} /> New Borrow</button>
       </div>
       <div className="filter-bar">
         <input placeholder="Search by book or member..." value={search} onChange={(e) => { const val = e.target.value; setSearch(val); loadBorrows({ search: val }) }} />
@@ -142,77 +173,52 @@ export default function BorrowReturn() {
           <option value="borrowed">Borrowed</option>
           <option value="returned">Returned</option>
         </select>
-        <button className="btn btn-primary" onClick={loadBorrows}><Search size={16} /> Filter</button>
-      </div>
-      <div className="borrow-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Book</th>
-              <th>Borrow Date</th>
-              <th>Due Date</th>
-              <th>Return Date</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {borrows.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No borrow records found</td></tr>
-            ) : borrows.map((b) => (
-              <tr key={b.id}>
-                <td data-label="Member">{b.members?.name}</td>
-                <td data-label="Book">{b.books?.title}</td>
-                <td data-label="Borrow Date">{new Date(b.borrow_date).toLocaleDateString()}</td>
-                <td data-label="Due Date">{new Date(b.due_date).toLocaleDateString()}</td>
-                <td data-label="Return Date">{b.return_date ? new Date(b.return_date).toLocaleDateString() : '-'}</td>
-                <td data-label="Status">
-                  <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`}>
-                    {b.status}
-                  </span>
-                </td>
-                <td data-label="Action">
-                  {b.status === 'borrowed' && (
-                    <button className="btn btn-success btn-sm" onClick={() => handleReturn(b)}>
-                      <Undo2 size={14} /> Return
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
-      <FormWrapper open={showSheet} onClose={() => setShowSheet(false)} title="New Borrow">
-        {error && <div className="error-msg">{error}</div>}
-        <form onSubmit={handleBorrow}>
-          <div className="form-group">
-            <label>Member *</label>
-            <select name="member_id" value={form.member_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
-              <option value="">Select member...</option>
-              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+      {loading ? (
+        <div className="list-cards">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className={isMobile ? 'borrow-card-mobile' : 'list-card'} style={{ pointerEvents: 'none' }}>
+              <div className="skeleton-circle" style={{ width: 44, height: 44 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton-bar" style={{ width: '70%', marginBottom: 6 }} />
+                <div className="skeleton-bar" style={{ width: '40%', height: 10 }} />
+              </div>
+              <div className="skeleton-badge" />
+            </div>
+          ))}
+        </div>
+      ) : borrows.length === 0 ? (
+        <div className="empty-state">
+          <Book size={48} />
+          <h3>No borrow records found</h3>
+          <p>Start by borrowing a book to a member.</p>
+        </div>
+      ) : (
+        <>
+          <div className={isMobile ? 'borrow-cards-mobile' : 'list-cards'}>
+            {borrows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(b => renderCard(b))}
           </div>
-          <div className="form-group">
-            <label>Book *</label>
-            <select name="book_id" value={form.book_id} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required>
-              <option value="">Select book...</option>
-              {books.map((b) => <option key={b.id} value={b.id}>{b.title} ({b.available_quantity} avail)</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Due Date *</label>
-            <input type="date" name="due_date" value={form.due_date} onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })} required />
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-primary" disabled={loading}>{loading ? 'Processing...' : 'Borrow'}</button>
-            <button type="button" className="btn btn-secondary" onClick={() => setShowSheet(false)}>Cancel</button>
-          </div>
-        </form>
-      </FormWrapper>
-      <Fab onClick={() => setShowSheet(true)} />
+          {Math.ceil(borrows.length / PAGE_SIZE) > 1 && (
+            <div className="pagination">
+              <button className="pagination-btn" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /> Prev</button>
+              <span className="pagination-info">Page {page} of {Math.ceil(borrows.length / PAGE_SIZE)} ({borrows.length} records)</span>
+              <button className="pagination-btn" disabled={page >= Math.ceil(borrows.length / PAGE_SIZE)} onClick={() => setPage(page + 1)}>Next <ChevronRight size={16} /></button>
+            </div>
+          )}
+        </>
+      )}
+
+      <ConfirmDialog
+        open={!!returnConfirm}
+        onClose={() => setReturnConfirm(null)}
+        onConfirm={() => { handleReturn(returnConfirm); setReturnConfirm(null) }}
+        title="Return Book"
+        message={returnConfirm ? `Return "${returnConfirm.books?.title}" by ${returnConfirm.members?.name}?` : ''}
+        confirmText="Yes, Return"
+        cancelText="No"
+      />
+      <Fab onClick={() => navigate('/app/borrow-new')} />
     </div>
   )
 }

@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library, ArrowRight } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
+import BorrowBook from '../components/BorrowBook'
+import ConfirmDialog from '../components/ConfirmDialog'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 8
 
 export default function Books() {
   const { user } = useAuth()
@@ -16,9 +18,9 @@ export default function Books() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const navigate = useNavigate()
-  const location = useLocation()
   const toast = useToast()
-  const visibleRef = useRef(false)
+  const [borrowBook, setBorrowBook] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const loadBooks = async (p) => {
     setLoading(true)
@@ -47,10 +49,14 @@ export default function Books() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation()
-    if (!confirm('Delete this book?')) return
-    await supabase.from('books').delete().eq('id', id)
+    setDeleteConfirm(id)
+  }
+
+  const confirmDelete = async () => {
+    await supabase.from('books').delete().eq('id', deleteConfirm)
     toast.success('Book deleted')
     loadBooks(books.length === 1 && page > 1 ? page - 1 : page)
+    setDeleteConfirm(null)
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -98,6 +104,9 @@ export default function Books() {
                   </div>
                 </div>
                 <div className="book-card-actions" onClick={(e) => e.stopPropagation()}>
+                  {book.available_quantity > 0 && (
+                    <button className="btn-icon" title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={16} /></button>
+                  )}
                   <Link to={`/app/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
                   <button className="btn-icon danger" onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={16} /></button>
                 </div>
@@ -106,14 +115,25 @@ export default function Books() {
           </div>
           {totalPages > 1 && (
             <div className="pagination">
-              <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => loadBooks(page - 1)}><ChevronLeft size={16} /> Prev</button>
+              <button className="pagination-btn" disabled={page <= 1} onClick={() => loadBooks(page - 1)}><ChevronLeft size={16} /> Prev</button>
               <span className="pagination-info">Page {page} of {totalPages} ({total} books)</span>
-              <button className="btn btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => loadBooks(page + 1)}>Next <ChevronRight size={16} /></button>
+              <button className="pagination-btn" disabled={page >= totalPages} onClick={() => loadBooks(page + 1)}>Next <ChevronRight size={16} /></button>
             </div>
           )}
         </>
       )}
       <Fab onClick={() => navigate('/app/books/new')} />
+      <BorrowBook open={!!borrowBook} onClose={() => setBorrowBook(null)} book={borrowBook} />
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Book"
+        message="Are you sure you want to delete this book? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+      />
     </div>
   )
 }
