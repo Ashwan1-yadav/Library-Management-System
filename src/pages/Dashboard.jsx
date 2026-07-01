@@ -80,12 +80,10 @@ export default function Dashboard() {
   ]
 
   return (
-    <div>
+    <div className="dashboard-root">
       <div className="dashboard-welcome">
-        <div>
-          <h1>Welcome back, {user?.email?.split('@')[0] || 'Admin'}</h1>
-          <p>Here's what's happening at your library today.</p>
-        </div>
+        <h1>Welcome back, {user?.email?.split('@')[0] || 'Admin'}</h1>
+        <p>Here's what's happening at your library today.</p>
       </div>
 
       <div className="stats-grid">
@@ -145,7 +143,7 @@ export default function Dashboard() {
             ) : recentBorrows.length === 0 ? (
               <p className="empty-text">No recent borrows</p>
             ) : (
-              recentBorrows.map((b) => (
+              recentBorrows.slice(0, 5).map((b) => (
                 <div key={b.id} className="borrow-item" onClick={() => navigate(`/app/borrows/${b.id}`)} style={{ cursor: 'pointer' }}>
                   <div className="borrow-item-cover">
                     {b.books?.cover_image ? (

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { Download } from 'lucide-react'
+import { Download, FileText } from 'lucide-react'
 import { useToast } from '../components/Toast'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 const COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#059669', '#d97706', '#7c3aed']
 
@@ -36,6 +38,8 @@ export default function Reports() {
   const [monthlyBorrows, setMonthlyBorrows] = useState([])
   const [topBooks, setTopBooks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const reportsRef = useRef(null)
   const toast = useToast()
 
   useEffect(() => {
@@ -96,10 +100,53 @@ export default function Reports() {
     toast.success('Report exported as CSV')
   }
 
+  const handleDownloadPDF = async () => {
+    if (!reportsRef.current) return
+    setPdfLoading(true)
+    try {
+      const canvas = await html2canvas(reportsRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      })
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfW = pdf.internal.pageSize.getWidth()
+      const pdfH = pdf.internal.pageSize.getHeight()
+      const pageContentH = (canvas.width / pdfW) * (pdfH - 20)
+      let remaining = canvas.height
+      let srcY = 0
+      let page = 0
+      while (remaining > 0) {
+        if (page > 0) pdf.addPage()
+        const h = Math.min(remaining, pageContentH)
+        const pageCanvas = document.createElement('canvas')
+        pageCanvas.width = canvas.width
+        pageCanvas.height = h
+        const ctx = pageCanvas.getContext('2d')
+        ctx.drawImage(canvas, 0, srcY, canvas.width, h, 0, 0, canvas.width, h)
+        const pageImg = pageCanvas.toDataURL('image/png')
+        pdf.addImage(pageImg, 'PNG', 0, 10, pdfW, (h / canvas.width) * pdfW)
+        srcY += h
+        remaining -= h
+        page++
+      }
+      pdf.save('library-reports.pdf')
+      toast.success('PDF downloaded successfully')
+    } catch (err) {
+      toast.error('Failed to generate PDF')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
         <h1>Reports</h1>
+        <button className="btn btn-secondary btn-sm" onClick={handleDownloadPDF} disabled={pdfLoading}>
+          <FileText size={14} /> {pdfLoading ? 'Generating...' : 'Download PDF'}
+        </button>
       </div>
       {loading ? (
         <div className="list-cards">
@@ -114,7 +161,7 @@ export default function Reports() {
         </div>
       ) : (
         <>
-          <div className="reports-list">
+          <div className="reports-list" ref={reportsRef}>
             <div className="card">
               <div className="report-header">
                 <h2>Books by Genre</h2>

@@ -223,6 +223,10 @@ export default function Layout() {
           <div className="navbar-left">
             <button className="navbar-icon-btn hamburger" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button>
             <h2 className="navbar-title">{pageTitle}</h2>
+            <div className="navbar-branding">
+              <Library size={20} />
+              <span>LibraSys</span>
+            </div>
           </div>
           <div className="navbar-right">
             <button className="navbar-icon-btn" onClick={toggleTheme} title="Toggle theme">
