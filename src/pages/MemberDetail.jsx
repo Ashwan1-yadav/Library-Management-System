@@ -168,21 +168,23 @@ export default function MemberDetail() {
   }
 
   return (
-    <div className="book-detail">
+    <div className="member-detail-page">
       <button className="btn btn-secondary back-btn" onClick={() => navigate(-1)}>
         <ArrowLeft size={16} /> Back
       </button>
-      <div className="book-detail-content">
-        <div className="book-detail-img">
-          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <User size={64} />
-          </div>
+
+      <div className="member-detail-top">
+        <div className="member-detail-avatar-small">
+          {member.name?.charAt(0)?.toUpperCase()}
         </div>
-        <div className="book-detail-info">
-          <h1>{member.name}</h1>
-          <div className="detail-badges">
-            <span className="badge badge-success">Active Member</span>
-          </div>
+        <div>
+          <h1 className="member-detail-top-name">{member.name}</h1>
+          <span className="badge badge-success">Active Member</span>
+        </div>
+      </div>
+
+      <div className="member-detail-layout">
+        <div className="member-detail-left">
           <div className="detail-stats">
             <div className="detail-stat">
               <span className="detail-stat-label">Active Borrows</span>
@@ -197,6 +199,7 @@ export default function MemberDetail() {
               <span className="detail-stat-value">{returnedBorrows}</span>
             </div>
           </div>
+
           <div className="detail-info-grid">
             {infoItems.map(({ icon: Icon, label, value }) => (
               <div key={label} className="detail-item">
@@ -208,16 +211,19 @@ export default function MemberDetail() {
               </div>
             ))}
           </div>
+
           <div className="detail-actions">
             <Link to={`/app/members/${member.id}/edit`} className="btn btn-warning"><Edit size={16} /> Edit</Link>
             <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)}><Trash2 size={16} /> Delete</button>
           </div>
+        </div>
 
+        <div className="member-detail-right">
           {borrows.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Borrow History ({totalBorrows})</h3>
+            <div className="member-detail-borrows">
+              <h3>Borrow History ({totalBorrows})</h3>
               <div className="borrow-history-scroll">
-                <div className="list-cards">
+                <div className="list-cards" style={{ padding: 0 }}>
                   {borrows.map(b => (
                     <div
                       key={b.id}

@@ -86,7 +86,7 @@ export default function BorrowReturn() {
           amount: fineAmount,
         })
         if (daysLate > 0) {
-          toast.info(`Late return: $${fineAmount} fine applied (${daysLate} days)`)
+          toast.info(`Late return: ₹${fineAmount} fine applied (${daysLate} days)`)
         }
       }
       toast.success('Book returned successfully')

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { DollarSign, CheckCircle, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CheckCircle, Book, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 
@@ -22,7 +22,9 @@ export default function Fines() {
 
   useEffect(() => { loadFines(1) }, [])
 
-  const loadFines = async (p = 1) => {
+  const loadFines = async (p = 1, opts) => {
+    const f = opts?.filter ?? filter
+    const s = opts?.search ?? search
     setPage(p)
     setLoading(true)
     let query = supabase
@@ -31,11 +33,11 @@ export default function Fines() {
       .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
 
-    if (filter === 'paid') query = query.eq('paid', true)
-    else if (filter === 'unpaid') query = query.eq('paid', false)
+    if (f === 'paid') query = query.eq('paid', true)
+    else if (f === 'unpaid') query = query.eq('paid', false)
 
-    if (search) {
-      query = query.or(`members.name.ilike.%${search}%,borrows.books.title.ilike.%${search}%`)
+    if (s) {
+      query = query.or(`members.name.ilike.%${s}%,borrows.books.title.ilike.%${s}%`)
     }
 
     const from = (p - 1) * PAGE_SIZE
@@ -48,12 +50,12 @@ export default function Fines() {
 
   const handleFilterChange = (val) => {
     setFilter(val)
-    loadFines(1)
+    loadFines(1, { filter: val })
   }
 
   const handleSearchChange = (val) => {
     setSearch(val)
-    loadFines(1)
+    loadFines(1, { search: val })
   }
 
   const handlePay = async (id) => {
@@ -74,7 +76,7 @@ export default function Fines() {
         <div className={`stat-card${loading ? ' skeleton' : ''}`}>
           <div className="stat-card-left">
             <div className="stat-icon-circle" style={{ background: '#dc262615', color: '#dc2626' }}>
-              <DollarSign size={22} />
+              <span style={{ fontSize: 22, fontWeight: 700 }}>₹</span>
             </div>
             <div className="stat-info">
               <p className="stat-label">Total Unpaid Fines</p>
@@ -110,7 +112,7 @@ export default function Fines() {
         </div>
       ) : fines.length === 0 ? (
         <div className="empty-state">
-          <DollarSign size={48} />
+          <span style={{ fontSize: 48, fontWeight: 300, color: 'var(--text-muted)' }}>₹</span>
           <h3>No fines found</h3>
           <p>Fines will appear here when books are returned late.</p>
         </div>
@@ -120,12 +122,12 @@ export default function Fines() {
             {fines.map((f) => (
               <div key={f.id} className="list-card" onClick={() => navigate(`/app/fines/${f.id}`)}>
                 <div className="list-card-avatar" style={{ background: f.paid ? '#059669' : '#dc2626' }}>
-                  <DollarSign size={20} />
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>₹</span>
                 </div>
                 <div className="list-card-info">
-                  <p className="list-card-title">{f.borrows?.books?.title}</p>
+                  <p className="list-card-title">{f.members?.name}</p>
                   <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <User size={11} /> {f.members?.name}
+                    <Book size={11} /> {f.borrows?.books?.title}
                   </p>
                   <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Calendar size={11} /> Due: {new Date(f.borrows?.due_date).toLocaleDateString()}

@@ -50,7 +50,7 @@ export default function BorrowDetail() {
           member_id: borrow.member_id,
           amount: fineAmount,
         })
-        if (daysLate > 0) toast.info(`Late return: $${fineAmount} fine applied (${daysLate} days)`)
+        if (daysLate > 0) toast.info(`Late return: ₹${fineAmount} fine applied (${daysLate} days)`)
       }
       toast.success('Book returned successfully')
       loadBorrow()
@@ -124,7 +124,7 @@ export default function BorrowDetail() {
                   <AlertTriangle size={16} />
                   <span>Fine</span>
                 </div>
-                <p style={{ color: '#dc2626', fontWeight: 600 }}>${parseFloat(fine.amount).toFixed(2)}</p>
+                <p style={{ color: '#dc2626', fontWeight: 600 }}>₹{parseFloat(fine.amount).toFixed(2)}</p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{fine.paid ? 'Paid' : 'Unpaid'}</p>
               </div>
             )}

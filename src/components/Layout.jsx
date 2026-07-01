@@ -246,7 +246,7 @@ export default function Layout() {
                       <div key={i} className="notif-item">
                         <AlertTriangle size={16} className="notif-icon" />
                         <div className="notif-text">
-                          <strong>{n.name}</strong> has ${n.total.toFixed(2)} in unpaid fines
+                          <strong>{n.name}</strong> has ₹{n.total.toFixed(2)} in unpaid fines
                         </div>
                       </div>
                     ))

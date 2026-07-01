@@ -1370,6 +1370,73 @@ body {
 
 .book-detail-img img { width: 100%; display: block; }
 
+/* ========= Member Detail Desktop ========= */
+.member-detail-page {
+  max-width: 1000px;
+}
+
+.member-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.member-detail-avatar-small {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-family);
+  flex-shrink: 0;
+}
+
+.member-detail-top-name {
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+
+.member-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.member-detail-layout--single {
+  grid-template-columns: 1fr;
+}
+
+.member-detail-right .member-detail-borrows {
+  margin-top: 0;
+}
+
+.member-detail-right .member-detail-borrows h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.member-detail-right .borrow-history-scroll {
+  max-height: 500px;
+}
+
+.member-detail-borrows {
+  margin-top: 28px;
+}
+
+.member-detail-borrows h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
 .book-detail-info h1 { font-size: 26px; margin-bottom: 12px; }
 .detail-badges { display: flex; gap: 8px; margin-bottom: 20px; }
 
@@ -2685,6 +2752,18 @@ table tr:last-child td { border-bottom: none; }
   background: var(--surface);
 }
 
+/* ========= Borrow History Scroll (global) ========= */
+.borrow-history-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.borrow-history-scroll::-webkit-scrollbar { width: 6px; }
+.borrow-history-scroll::-webkit-scrollbar-track { background: transparent; }
+.borrow-history-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
 /* ========= Landing Mobile ========= */
 @media (max-width: 768px) {
   .landing-features { grid-template-columns: 1fr; }
@@ -3184,7 +3263,8 @@ table tr:last-child td { border-bottom: none; }
 
   .book-detail { padding: 0; }
 
-  .book-detail .back-btn {
+  .book-detail .back-btn,
+  .member-detail-page .back-btn {
     margin: 8px 16px 0;
     border-radius: 10px;
     min-height: 40px;
@@ -3199,6 +3279,32 @@ table tr:last-child td { border-bottom: none; }
 
   .book-detail-info { padding: 0 16px 20px; }
   .book-detail-info h1 { font-size: 22px; }
+
+  /* ---------- Member/Fine Detail Mobile ---------- */
+  .member-detail-page {
+    padding: 0 0 calc(var(--safe-bottom) + 20px);
+  }
+
+  .member-detail-top {
+    padding: 12px 16px 0;
+    gap: 12px;
+  }
+
+  .member-detail-avatar-small {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .member-detail-top-name {
+    font-size: 20px;
+  }
+
+  .member-detail-layout,
+  .member-detail-layout--single {
+    padding: 0 16px;
+    gap: 16px;
+  }
 
   .detail-stats {
     grid-template-columns: repeat(3, 1fr);
@@ -3229,18 +3335,6 @@ table tr:last-child td { border-bottom: none; }
 
   /* ---------- Reports Mobile ---------- */
   .reports-grid { grid-template-columns: 1fr; }
-
-  /* ---------- Borrow History Scroll ---------- */
-  .borrow-history-scroll {
-    max-height: 340px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .borrow-history-scroll::-webkit-scrollbar { width: 6px; }
-  .borrow-history-scroll::-webkit-scrollbar-track { background: transparent; }
-  .borrow-history-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   /* ---------- List Card Mobile ---------- */
   .list-cards { padding: 0 16px; }

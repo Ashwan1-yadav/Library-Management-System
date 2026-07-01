@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../components/Toast'
-import { ArrowLeft, DollarSign, User, Book, Calendar, CheckCircle, Clock } from 'lucide-react'
+import { ArrowLeft, User, Book, Calendar, CheckCircle, Clock } from 'lucide-react'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function FineDetail() {
   const { user } = useAuth()
@@ -12,6 +13,7 @@ export default function FineDetail() {
   const toast = useToast()
   const [fine, setFine] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [payConfirm, setPayConfirm] = useState(false)
 
   useEffect(() => { loadFine() }, [id])
 
@@ -19,7 +21,7 @@ export default function FineDetail() {
     setLoading(true)
     const { data } = await supabase
       .from('fines')
-      .select('*, borrows(*, books(title, author, isbn)), members(name, email, phone)')
+      .select('*, borrows(*, books(title, author, isbn, cover_image)), members(name, email, phone)')
       .eq('id', id)
       .eq('admin_id', user.id)
       .single()
@@ -38,29 +40,32 @@ export default function FineDetail() {
 
   const borrow = fine.borrows
   const member = fine.members
+  const daysLate = Math.ceil((new Date(borrow?.return_date || new Date()) - new Date(borrow?.due_date)) / (1000 * 60 * 60 * 24))
 
   return (
-    <div className="book-detail">
+    <div className="member-detail-page">
       <button className="btn btn-secondary back-btn" onClick={() => navigate(-1)}>
         <ArrowLeft size={16} /> Back
       </button>
-      <div className="book-detail-content">
-        <div className="book-detail-img">
-          <div style={{ width: '100%', height: '100%', background: fine.paid ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <DollarSign size={64} />
-          </div>
+
+      <div className="member-detail-top">
+        <div className="member-detail-avatar-small" style={{ background: fine.paid ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)' }}>
+          ₹
         </div>
-        <div className="book-detail-info">
-          <h1>${parseFloat(fine.amount).toFixed(2)}</h1>
-          <div className="detail-badges">
-            <span className={`badge ${fine.paid ? 'badge-success' : 'badge-danger'}`}>
-              {fine.paid ? 'Paid' : 'Unpaid'}
-            </span>
-          </div>
+        <div>
+          <h1 className="member-detail-top-name">₹{parseFloat(fine.amount).toFixed(2)}</h1>
+          <span className={`badge ${fine.paid ? 'badge-success' : 'badge-danger'}`}>
+            {fine.paid ? 'Paid' : 'Unpaid'}
+          </span>
+        </div>
+      </div>
+
+      <div className="member-detail-layout member-detail-layout--single">
+        <div>
           <div className="detail-stats">
             <div className="detail-stat">
               <span className="detail-stat-label">Fine Amount</span>
-              <span className="detail-stat-value">${parseFloat(fine.amount).toFixed(2)}</span>
+              <span className="detail-stat-value">₹{parseFloat(fine.amount).toFixed(2)}</span>
             </div>
             <div className="detail-stat">
               <span className="detail-stat-label">Status</span>
@@ -71,6 +76,7 @@ export default function FineDetail() {
               <span className="detail-stat-value">{fine.paid_date ? new Date(fine.paid_date).toLocaleDateString() : '-'}</span>
             </div>
           </div>
+
           <div className="detail-info-grid">
             {member && (
               <div className="detail-item">
@@ -107,20 +113,31 @@ export default function FineDetail() {
                     <Clock size={16} />
                     <span>Days Late</span>
                   </div>
-                  <p>{Math.ceil((new Date(borrow.return_date || new Date()) - new Date(borrow.due_date)) / (1000 * 60 * 60 * 24))} days</p>
+                  <p>{daysLate} days</p>
                 </div>
               </>
             )}
           </div>
+
           <div className="detail-actions">
             {!fine.paid && (
-              <button className="btn btn-success" onClick={handlePay}>
+              <button className="btn btn-success" onClick={() => setPayConfirm(true)}>
                 <CheckCircle size={16} /> Mark as Paid
               </button>
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={payConfirm}
+        onClose={() => setPayConfirm(false)}
+        onConfirm={() => { handlePay(); setPayConfirm(false) }}
+        title="Mark Fine as Paid"
+        message={member ? `Mark ₹${parseFloat(fine.amount).toFixed(2)} fine for "${member.name}" as paid?` : ''}
+        confirmText="Yes, Mark Paid"
+        cancelText="Cancel"
+      />
     </div>
   )
 }
