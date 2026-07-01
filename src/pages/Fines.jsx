@@ -29,7 +29,7 @@ export default function Fines() {
     setLoading(true)
     let query = supabase
       .from('fines')
-      .select('*, borrows!inner(borrow_date, due_date, books(title)), members(name, email)', { count: 'exact' })
+      .select('*, borrows!inner(borrow_date, due_date, books(title)), members!inner(name, email)', { count: 'exact' })
       .eq('admin_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -37,7 +37,7 @@ export default function Fines() {
     else if (f === 'unpaid') query = query.eq('paid', false)
 
     if (s) {
-      query = query.or(`members.name.ilike.%${s}%,borrows.books.title.ilike.%${s}%`)
+      query = query.ilike('members.name', `%${s}%`)
     }
 
     const from = (p - 1) * PAGE_SIZE

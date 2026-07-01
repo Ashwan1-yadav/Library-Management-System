@@ -37,7 +37,6 @@ export default function Reports() {
   const [topBooks, setTopBooks] = useState([])
   const [loading, setLoading] = useState(true)
   const toast = useToast()
-  const chartHeight = isMobile ? 220 : 300
 
   useEffect(() => {
     loadAll()
@@ -115,7 +114,7 @@ export default function Reports() {
         </div>
       ) : (
         <>
-          <div className="reports-grid">
+          <div className="reports-list">
             <div className="card">
               <div className="report-header">
                 <h2>Books by Genre</h2>
@@ -123,16 +122,44 @@ export default function Reports() {
                   <Download size={14} /> CSV
                 </button>
               </div>
-              <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
-                <ResponsiveContainer width="100%" height={chartHeight}>
-                  <PieChart>
-                    <Pie data={genreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={isMobile ? 70 : 100} label={!isMobile}>
-                      {genreData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Legend wrapperStyle={isMobile ? { fontSize: 10 } : undefined} />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div style={{ padding: isMobile ? '0 8px 0' : '0' }}>
+                {isMobile ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={genreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
+                        {genreData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie data={genreData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label>
+                            {genreData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginTop: 8 }}>
+                      {genreData.map((item, i) => {
+                        const total = genreData.reduce((s, g) => s + g.value, 0)
+                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0
+                        return (
+                          <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--bg)' }}>
+                            <div style={{ width: 14, height: 14, borderRadius: 4, background: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.value} ({pct}%)</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="card">
@@ -142,11 +169,11 @@ export default function Reports() {
                   <Download size={14} /> CSV
                 </button>
               </div>
-              <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
-                <ResponsiveContainer width="100%" height={chartHeight}>
+              <div style={{ padding: isMobile ? '0 8px 0' : '0' }}>
+                <ResponsiveContainer width="100%" height={isMobile ? 220 : 300}>
                   <BarChart data={monthlyBorrows} margin={isMobile ? { top: 8, right: 4, left: -16, bottom: 4 } : { top: 8, right: 8, left: -8, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="name" tick={{ fontSize: isMobile ? 9 : 12, fill: 'var(--text-muted)' }} interval={isMobile ? 1 : 0} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: isMobile ? 9 : 11, fill: 'var(--text-muted)' }} interval={isMobile ? 1 : 0} />
                     <YAxis tick={{ fontSize: isMobile ? 10 : 12, fill: 'var(--text-muted)' }} width={isMobile ? 30 : 40} />
                     <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
                     <Bar dataKey="count" fill="#2563eb" radius={[6, 6, 0, 0]} />
@@ -154,24 +181,24 @@ export default function Reports() {
                 </ResponsiveContainer>
               </div>
             </div>
-          </div>
-          <div className="card" style={{ marginTop: isMobile ? 12 : 24 }}>
-            <div className="report-header">
-              <h2>Top 5 Most Borrowed Books</h2>
-              <button className="btn btn-ghost btn-sm" onClick={() => handleExport(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
-                <Download size={14} /> CSV
-              </button>
-            </div>
-            <div style={{ padding: isMobile ? '0 8px 16px' : '0 16px 16px' }}>
-                <ResponsiveContainer width="100%" height={chartHeight}>
-                  <BarChart data={topBooks} layout="vertical" margin={isMobile ? { top: 8, right: 4, left: 0, bottom: 4 } : { top: 8, right: 8, left: -8, bottom: 4 }}>
+            <div className="card">
+              <div className="report-header">
+                <h2>Top 5 Most Borrowed</h2>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleExport(topBooks, 'top-borrowed-books.csv', ['name', 'count'])}>
+                  <Download size={14} /> CSV
+                </button>
+              </div>
+              <div style={{ padding: isMobile ? '0 8px 0' : '0' }}>
+                <ResponsiveContainer width="100%" height={isMobile ? 220 : 300}>
+                  <BarChart data={topBooks} layout="vertical" margin={isMobile ? { top: 8, right: 4, left: 0, bottom: 4 } : { top: 8, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 12, fill: 'var(--text-muted)' }} />
-                    <YAxis type="category" dataKey="name" width={isMobile ? 90 : 200} tick={{ fontSize: isMobile ? 9 : 12, fill: 'var(--text-muted)' }} />
+                    <YAxis type="category" dataKey="name" width={isMobile ? 90 : 180} tick={{ fontSize: isMobile ? 9 : 12, fill: 'var(--text-muted)' }} />
                     <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />
                     <Bar dataKey="count" fill="#059669" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </>

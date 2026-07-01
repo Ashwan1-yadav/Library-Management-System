@@ -1983,9 +1983,9 @@ table tr:last-child td { border-bottom: none; }
 }
 
 /* ========= Reports ========= */
-.reports-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.reports-list {
+  display: flex;
+  flex-direction: column;
   gap: 24px;
 }
 
@@ -2764,6 +2764,150 @@ table tr:last-child td { border-bottom: none; }
 .borrow-history-scroll::-webkit-scrollbar-track { background: transparent; }
 .borrow-history-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* ========= Borrow Form Desktop ========= */
+.borrow-form-hint-web {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.borrow-form-error-web {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.borrow-form-found-web {
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.borrow-form-found-web.member {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.borrow-form-found-web.book {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.borrow-form-found-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.borrow-form-found-cover {
+  width: 42px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.borrow-form-found-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.borrow-form-found-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.borrow-form-found-web.member .borrow-form-found-name {
+  color: #166534;
+}
+
+.borrow-form-found-web.book .borrow-form-found-name {
+  color: #1e40af;
+}
+
+.borrow-form-found-sub {
+  margin: 0;
+  font-size: 12px;
+}
+
+.borrow-form-found-web.member .borrow-form-found-sub {
+  color: #166534;
+  opacity: 0.8;
+}
+
+.borrow-form-found-web.book .borrow-form-found-sub {
+  color: #1e40af;
+  opacity: 0.8;
+}
+
+.borrow-form-found-stock {
+  margin: 0;
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+}
+
+.borrow-form-success-web {
+  text-align: center;
+  padding: 48px 28px;
+}
+
+.borrow-form-success-web-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  color: #059669;
+}
+
+.borrow-form-success-web h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #059669;
+}
+
+.borrow-form-success-web p {
+  margin: 0 0 28px;
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.borrow-form-success-web-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.borrow-form-success-web-actions .btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
 /* ========= Landing Mobile ========= */
 @media (max-width: 768px) {
   .landing-features { grid-template-columns: 1fr; }
@@ -3264,7 +3408,8 @@ table tr:last-child td { border-bottom: none; }
   .book-detail { padding: 0; }
 
   .book-detail .back-btn,
-  .member-detail-page .back-btn {
+  .member-detail-page .back-btn,
+  .back-btn {
     margin: 8px 16px 0;
     border-radius: 10px;
     min-height: 40px;
@@ -3334,7 +3479,7 @@ table tr:last-child td { border-bottom: none; }
   /* Fix double padding: list-cards inside book-detail-info already has 16px padding */
 
   /* ---------- Reports Mobile ---------- */
-  .reports-grid { grid-template-columns: 1fr; }
+  .reports-list { gap: 0; }
 
   /* ---------- List Card Mobile ---------- */
   .list-cards { padding: 0 16px; }
@@ -3534,7 +3679,7 @@ table tr:last-child td { border-bottom: none; }
   .borrow-card-mobile:active { opacity: 0.7; }
 
   /* ---------- Reports Mobile ---------- */
-  .reports-grid { padding: 0 16px; gap: 12px; }
+  .reports-list { padding: 0 16px; gap: 12px; }
 
   .card { margin: 0 16px; }
   .card:first-child { margin-top: 12px; }
@@ -3545,6 +3690,9 @@ table tr:last-child td { border-bottom: none; }
 
   /* ---------- Empty State Mobile ---------- */
   .empty-state { padding: 40px 16px; }
+
+  /* ---------- Page Header Mobile ---------- */
+  .page-header { display: none; }
 
   /* ---------- iOS Forms ---------- */
   .form-row { grid-template-columns: 1fr; }
@@ -3604,6 +3752,237 @@ table tr:last-child td { border-bottom: none; }
   .card + .card { margin-top: 4px; }
 
   .card-header h2 { font-size: 15px; font-weight: 600; }
+
+  /* ---------- Borrow Form Mobile ---------- */
+  .borrow-form-mobile {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding: 0 0 calc(var(--safe-bottom) + 20px);
+  }
+
+  .borrow-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .borrow-form-header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .borrow-form-back {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .borrow-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 16px 20px;
+  }
+
+  .form-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+
+  .form-ios-group {
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .form-ios-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 14px;
+    min-height: 50px;
+  }
+
+  .form-ios-row + .form-ios-row {
+    border-top: 1px solid var(--border);
+  }
+
+  .form-ios-row label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    min-width: 70px;
+    flex-shrink: 0;
+  }
+
+  .form-ios-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 0;
+    font-size: 16px;
+    font-family: var(--font-family);
+    color: var(--text);
+    outline: none;
+  }
+
+  .form-ios-row input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  .borrow-form-error {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  .borrow-form-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    padding-left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .borrow-form-found {
+    background: #f0fdf4;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #bbf7d0;
+  }
+
+  .borrow-form-found:has(img) {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .borrow-form-found-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .borrow-form-found-cover {
+    width: 40px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .borrow-form-found-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .borrow-form-found-name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #166534;
+  }
+
+  .borrow-form-found:has(img) .borrow-form-found-name {
+    color: #1e40af;
+  }
+
+  .borrow-form-found-sub {
+    margin: 0;
+    font-size: 12px;
+    color: #166534;
+    opacity: 0.8;
+  }
+
+  .borrow-form-found:has(img) .borrow-form-found-sub {
+    color: #1e40af;
+  }
+
+  .borrow-form-found-stock {
+    margin: 0;
+    font-size: 12px;
+    color: #059669;
+    font-weight: 600;
+  }
+
+  .borrow-form-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .borrow-form-submit:disabled {
+    opacity: 0.5;
+  }
+
+  .borrow-form-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+
+  .borrow-form-success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #059669;
+    margin-bottom: 16px;
+  }
+
+  .borrow-form-success h3 {
+    font-size: 20px;
+    margin: 0 0 8px;
+    color: #059669;
+  }
+
+  .borrow-form-success p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 24px;
+  }
 
   /* ---------- Page Transition ---------- */
   .page-transition {
@@ -3747,14 +4126,13 @@ table tr:last-child td { border-bottom: none; }
   }
 
   /* ---------- Reports ---------- */
-  .reports-grid {
-    grid-template-columns: 1fr;
+  .reports-list {
     gap: 0;
     padding: 0;
   }
 
-  .reports-grid .card { margin: 6px 16px; }
-  .reports-grid .card:first-child { margin-top: 8px; }
+  .reports-list .card { margin: 6px 16px; }
+  .reports-list .card:first-child { margin-top: 8px; }
   .report-header h2 { font-size: 16px; }
 
   /* ---------- Profile ---------- */

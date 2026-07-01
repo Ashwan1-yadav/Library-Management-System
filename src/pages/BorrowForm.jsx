@@ -1,14 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../components/Toast'
-import { ArrowLeft, Mail, Book, Hash, Calendar, ArrowRight, User } from 'lucide-react'
+import { ArrowLeft, Mail, Book, Hash, Calendar, ArrowRight, User, CheckCircle } from 'lucide-react'
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
 
 export default function BorrowForm() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
+  const isMobile = useIsMobile()
 
   const [memberEmail, setMemberEmail] = useState('')
   const [member, setMember] = useState(null)
@@ -46,19 +57,47 @@ export default function BorrowForm() {
     setBook(null)
 
     const trimmed = bookQuery.trim()
-    let query = supabase
+
+    const hasHyphen = trimmed.includes('-')
+    const allDigits = /^\d{10,13}$/.test(trimmed)
+
+    if (hasHyphen || allDigits) {
+      // ISBN search — try exact ilike match first
+      const { data } = await supabase
+        .from('books')
+        .select('*')
+        .eq('admin_id', user.id)
+        .gt('available_quantity', 0)
+        .ilike('isbn', trimmed)
+        .maybeSingle()
+      if (data) { setBook(data); return }
+
+      // Fallback: compare stripped ISBNs (handles seed data with hex chars)
+      const normalized = trimmed.replace(/[-\s]/g, '').toLowerCase()
+      let { data: all } = await supabase
+        .from('books')
+        .select('*')
+        .eq('admin_id', user.id)
+        .gt('available_quantity', 0)
+      if (all) {
+        const match = all.find(b => b.isbn.replace(/[-\s]/g, '').toLowerCase() === normalized)
+        if (match) { setBook(match); return }
+      }
+
+      setBookError('Book not found or out of stock.')
+      toast.error('Book not found or out of stock.')
+      return
+    }
+
+    // Title search
+    const { data } = await supabase
       .from('books')
       .select('*')
       .eq('admin_id', user.id)
       .gt('available_quantity', 0)
-
-    if (/^\d{10,13}$/.test(trimmed)) {
-      query = query.eq('isbn', trimmed)
-    } else {
-      query = query.ilike('title', `%${trimmed}%`).limit(1)
-    }
-
-    const { data } = await query.single()
+      .ilike('title', `%${trimmed}%`)
+      .limit(1)
+      .maybeSingle()
     if (data) {
       setBook(data)
     } else {
@@ -95,25 +134,129 @@ export default function BorrowForm() {
     '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="62" viewBox="0 0 44 62"><rect fill="#e5e7eb" width="44" height="62"/><text fill="#9ca3af" font-size="8" font-family="sans-serif" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">No Cover</text></svg>'
   )
 
-  return (
-    <div>
-      <button className="btn btn-secondary back-btn" onClick={() => navigate('/app/borrow-return')}>
-        <ArrowLeft size={16} /> Back
-      </button>
-
-      <div className="card" style={{ maxWidth: 560, margin: '20px auto' }}>
-        <div className="card-header">
-          <h2>New Borrow</h2>
+  if (isMobile) {
+    return (
+      <div className="borrow-form-mobile">
+        <div className="borrow-form-header">
+          <button className="borrow-form-back" onClick={() => navigate('/app/borrow-return')}><ArrowLeft size={22} /></button>
+          <h1>New Borrow</h1>
+          <div style={{ width: 40 }} />
         </div>
 
         {borrowDone ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>✓</div>
-            <h3 style={{ margin: '0 0 8px', color: '#059669' }}>Borrowed Successfully!</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>
-              {book?.title} has been borrowed by {member?.name}
-            </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div className="borrow-form-success">
+            <div className="borrow-form-success-icon"><CheckCircle size={48} /></div>
+            <h3>Borrowed Successfully!</h3>
+            <p>{book?.title} has been borrowed by {member?.name}</p>
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }} onClick={() => {
+              setBorrowDone(false)
+              setMemberEmail('')
+              setMember(null)
+              setBookQuery('')
+              setBook(null)
+              setDueDate('')
+            }}>Borrow Another</button>
+            <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/app/borrow-return')}>View Borrows</button>
+          </div>
+        ) : (
+          <form onSubmit={handleBorrow} className="borrow-form-body">
+            <div className="form-section">
+              <div className="form-section-title">MEMBER</div>
+              <div className="form-ios-group">
+                <div className="form-ios-row">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={memberEmail}
+                    onChange={(e) => setMemberEmail(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    placeholder="Enter member email..."
+                    required
+                  />
+                </div>
+              </div>
+              {memberError && <div className="borrow-form-error">{memberError}</div>}
+              {member && (
+                <div className="borrow-form-found">
+                  <div className="borrow-form-found-avatar" style={{ background: '#dcfce7' }}>
+                    <User size={18} color="#166534" />
+                  </div>
+                  <div className="borrow-form-found-info">
+                    <p className="borrow-form-found-name">{member.name}</p>
+                    <p className="borrow-form-found-sub">{member.email}</p>
+                    {member.phone && <p className="borrow-form-found-sub">{member.phone}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="form-section">
+              <div className="form-section-title">BOOK</div>
+              <div className="form-ios-group">
+                <div className="form-ios-row">
+                  <label>ISBN or Title</label>
+                  <input
+                    type="text"
+                    value={bookQuery}
+                    onChange={(e) => setBookQuery(e.target.value)}
+                    onBlur={handleBookBlur}
+                    placeholder="Enter ISBN or book title..."
+                    required
+                  />
+                </div>
+              </div>
+              <p className="borrow-form-hint"><Hash size={11} /> Enter 10-13 digit ISBN for exact match, or title for search</p>
+              {bookError && <div className="borrow-form-error">{bookError}</div>}
+              {book && (
+                <div className="borrow-form-found">
+                  <img src={book.cover_image || placeholderImg} alt="" className="borrow-form-found-cover" />
+                  <div className="borrow-form-found-info">
+                    <p className="borrow-form-found-name">{book.title}</p>
+                    <p className="borrow-form-found-sub">{book.author}</p>
+                    {book.isbn && <p className="borrow-form-found-sub">ISBN: {book.isbn}</p>}
+                    <p className="borrow-form-found-stock">{book.available_quantity} available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="form-section">
+              <div className="form-section-title">DUE DATE</div>
+              <div className="form-ios-group">
+                <div className="form-ios-row">
+                  <label>Return by</label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button className="btn btn-primary borrow-form-submit" disabled={loading || !member || !book || !dueDate}>
+              {loading ? 'Processing...' : <><ArrowRight size={18} /> Borrow Book</>}
+            </button>
+          </form>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>New Borrow</h1>
+      </div>
+      <div className="card" style={{ maxWidth: 600 }}>
+        {borrowDone ? (
+          <div className="borrow-form-success-web" style={{ padding: '40px 0' }}>
+            <div className="borrow-form-success-web-icon"><CheckCircle size={40} /></div>
+            <h3>Borrowed Successfully!</h3>
+            <p>{book?.title} has been borrowed by {member?.name}</p>
+            <div className="borrow-form-success-web-actions">
               <button className="btn btn-primary" onClick={() => {
                 setBorrowDone(false)
                 setMemberEmail('')
@@ -127,86 +270,76 @@ export default function BorrowForm() {
           </div>
         ) : (
           <form onSubmit={handleBorrow}>
-            <div className="form-group">
-              <label><Mail size={14} style={{ marginRight: 6 }} />Member Email *</label>
-              <input
-                type="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                onBlur={handleEmailBlur}
-                placeholder="Enter member email..."
-                required
-              />
-            </div>
-
-            {memberError && (
-              <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
-                {memberError}
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label><Mail size={14} style={{ marginRight: 4 }} /> Member Email</label>
+                <input
+                  type="email"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  onBlur={handleEmailBlur}
+                  placeholder="Enter member email..."
+                  required
+                />
               </div>
-            )}
-
+            </div>
+            {memberError && <div className="borrow-form-error-web">{memberError}</div>}
             {member && (
-              <div style={{ background: '#f0fdf4', borderRadius: 'var(--radius-sm)', padding: 14, marginBottom: 20, border: '1px solid #bbf7d0', display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="borrow-form-found-web member">
+                <div className="borrow-form-found-avatar" style={{ background: '#dcfce7' }}>
                   <User size={20} color="#166534" />
                 </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#166534' }}>{member.name}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#166534' }}>{member.email}</p>
-                  {member.phone && <p style={{ margin: 0, fontSize: 12, color: '#166534' }}>{member.phone}</p>}
+                <div className="borrow-form-found-info">
+                  <p className="borrow-form-found-name">{member.name}</p>
+                  <p className="borrow-form-found-sub">{member.email}</p>
+                  {member.phone && <p className="borrow-form-found-sub">{member.phone}</p>}
                 </div>
               </div>
             )}
 
-            <div className="form-group">
-              <label><Book size={14} style={{ marginRight: 6 }} />Book ISBN or Title *</label>
-              <input
-                type="text"
-                value={bookQuery}
-                onChange={(e) => setBookQuery(e.target.value)}
-                onBlur={handleBookBlur}
-                placeholder="Enter ISBN or book title..."
-                required
-              />
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                <Hash size={10} style={{ marginRight: 4 }} />Enter 10-13 digit ISBN for exact match, or title for search
-              </p>
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label><Book size={14} style={{ marginRight: 4 }} /> ISBN or Title</label>
+                <input
+                  type="text"
+                  value={bookQuery}
+                  onChange={(e) => setBookQuery(e.target.value)}
+                  onBlur={handleBookBlur}
+                  placeholder="Enter ISBN or book title..."
+                  required
+                />
+                <p className="borrow-form-hint-web"><Hash size={10} /> Enter 10-13 digit ISBN for exact match, or title for search</p>
+              </div>
             </div>
-
-            {bookError && (
-              <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
-                {bookError}
-              </div>
-            )}
-
+            {bookError && <div className="borrow-form-error-web">{bookError}</div>}
             {book && (
-              <div style={{ background: '#eff6ff', borderRadius: 'var(--radius-sm)', padding: 14, marginBottom: 20, border: '1px solid #bfdbfe', display: 'flex', gap: 12, alignItems: 'center' }}>
-                <img src={book.cover_image || placeholderImg} alt="" style={{ width: 44, height: 62, objectFit: 'cover', borderRadius: 6 }} />
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1e40af' }}>{book.title}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#1e40af' }}>{book.author}</p>
-                  {book.isbn && <p style={{ margin: 0, fontSize: 11, color: '#1e40af' }}>ISBN: {book.isbn}</p>}
-                  <p style={{ margin: 0, fontSize: 12, color: '#059669', fontWeight: 600 }}>
-                    {book.available_quantity} available
-                  </p>
+              <div className="borrow-form-found-web book">
+                <img src={book.cover_image || placeholderImg} alt="" className="borrow-form-found-cover" />
+                <div className="borrow-form-found-info">
+                  <p className="borrow-form-found-name">{book.title}</p>
+                  <p className="borrow-form-found-sub">{book.author}</p>
+                  {book.isbn && <p className="borrow-form-found-sub">ISBN: {book.isbn}</p>}
+                  <p className="borrow-form-found-stock">{book.available_quantity} available</p>
                 </div>
               </div>
             )}
 
-            <div className="form-group">
-              <label><Calendar size={14} style={{ marginRight: 6 }} />Due Date *</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label><Calendar size={14} style={{ marginRight: 4 }} /> Due Date</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button className="btn btn-primary" disabled={loading || !member || !book || !dueDate}>
-                {loading ? 'Processing...' : <><ArrowRight size={16} /> Borrow</>}
+                {loading ? 'Processing...' : <><ArrowRight size={16} /> Borrow Book</>}
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => navigate('/app/borrow-return')}>Cancel</button>
             </div>
