@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../components/Toast'
-import { ArrowLeft, Mail, Book, Hash, Calendar, ArrowRight, User, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Mail, Book, Hash, Calendar, ArrowRight, User, CheckCircle, Scan } from 'lucide-react'
+import { Html5Qrcode } from 'html5-qrcode'
+import { Modal } from '../components/BottomSheet'
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
@@ -29,6 +31,10 @@ export default function BorrowForm() {
   const [book, setBook] = useState(null)
   const [bookError, setBookError] = useState('')
 
+  const scannerRef = useRef(null)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanning, setScanning] = useState(false)
+
   const [dueDate, setDueDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [borrowDone, setBorrowDone] = useState(false)
@@ -51,19 +57,64 @@ export default function BorrowForm() {
     }
   }
 
-  const handleBookBlur = async () => {
-    if (!bookQuery.trim()) return
+  const handleBookBlur = () => handleBookLookup(bookQuery)
+
+  useEffect(() => {
+    if (!showScanner || !scanning) return
+    let cancelled = false
+    const init = async () => {
+      await new Promise(r => requestAnimationFrame(r))
+      if (cancelled) return
+      const el = document.getElementById('scanner-el')
+      if (!el) return
+      try {
+        const scanner = new Html5Qrcode('scanner-el')
+        if (cancelled) return
+        scannerRef.current = scanner
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 30, qrbox: { width: 280, height: 200 } },
+          (decodedText) => {
+            scanner.stop().catch(() => {})
+            scannerRef.current = null
+            setScanning(false)
+            setShowScanner(false)
+            setBookQuery(decodedText)
+            handleBookLookup(decodedText)
+          },
+          () => {}
+        )
+      } catch {
+        if (!cancelled) {
+          toast.error('Unable to access camera. Please check permissions.')
+          setScanning(false)
+        }
+      }
+    }
+    init()
+    return () => { cancelled = true }
+  }, [showScanner, scanning])
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try { await scannerRef.current.stop() } catch {}
+      scannerRef.current = null
+    }
+    setScanning(false)
+    setShowScanner(false)
+  }
+
+  const handleBookLookup = async (query) => {
+    if (!query.trim()) return
     setBookError('')
     setBook(null)
 
-    const trimmed = bookQuery.trim()
-
+    const trimmed = query.trim()
     const hasHyphen = trimmed.includes('-')
     const allDigits = /^\d{10,13}$/.test(trimmed)
 
     if (hasHyphen || allDigits) {
-      // ISBN search — try exact ilike match first
-      const { data } = await supabase
+      let { data } = await supabase
         .from('books')
         .select('*')
         .eq('admin_id', user.id)
@@ -72,7 +123,6 @@ export default function BorrowForm() {
         .maybeSingle()
       if (data) { setBook(data); return }
 
-      // Fallback: compare stripped ISBNs (handles seed data with hex chars)
       const normalized = trimmed.replace(/[-\s]/g, '').toLowerCase()
       let { data: all } = await supabase
         .from('books')
@@ -89,7 +139,6 @@ export default function BorrowForm() {
       return
     }
 
-    // Title search
     const { data } = await supabase
       .from('books')
       .select('*')
@@ -195,14 +244,25 @@ export default function BorrowForm() {
               <div className="form-ios-group">
                 <div className="form-ios-row">
                   <label>ISBN or Title</label>
-                  <input
-                    type="text"
-                    value={bookQuery}
-                    onChange={(e) => setBookQuery(e.target.value)}
-                    onBlur={handleBookBlur}
-                    placeholder="Enter ISBN or book title..."
-                    required
-                  />
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      type="text"
+                      value={bookQuery}
+                      onChange={(e) => setBookQuery(e.target.value)}
+                      onBlur={handleBookBlur}
+                      placeholder="Enter ISBN or book title..."
+                      required
+                      style={{ flex: 1, border: 'none', background: 'transparent', padding: '12px 0', fontSize: 16, fontFamily: 'inherit', color: 'var(--text)', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setShowScanner(true); setScanning(true) }}
+                      style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 8, border: 'none', background: 'var(--primary-light)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title="Scan ISBN barcode"
+                    >
+                      <Scan size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
               <p className="borrow-form-hint"><Hash size={11} /> Enter 10-13 digit ISBN for exact match, or title for search</p>
@@ -241,6 +301,19 @@ export default function BorrowForm() {
             </button>
           </form>
         )}
+
+        <Modal open={showScanner} onClose={stopScanner} title="Scan ISBN Barcode">
+          {scanning && <div id="scanner-el" style={{ width: '100%', minHeight: 300 }} />}
+          {!scanning && showScanner && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <p style={{ color: 'var(--text-muted)' }}>Camera access denied or unavailable.</p>
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setScanning(true)}>Retry</button>
+            </div>
+          )}
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button className="btn btn-secondary" onClick={stopScanner}>Cancel</button>
+          </div>
+        </Modal>
       </div>
     )
   }
@@ -300,14 +373,19 @@ export default function BorrowForm() {
             <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
                 <label><Book size={14} style={{ marginRight: 4 }} /> ISBN or Title</label>
-                <input
-                  type="text"
-                  value={bookQuery}
-                  onChange={(e) => setBookQuery(e.target.value)}
-                  onBlur={handleBookBlur}
-                  placeholder="Enter ISBN or book title..."
-                  required
-                />
+                <div className="isbn-input-wrap">
+                  <input
+                    type="text"
+                    value={bookQuery}
+                    onChange={(e) => setBookQuery(e.target.value)}
+                    onBlur={handleBookBlur}
+                    placeholder="Enter ISBN or book title..."
+                    required
+                  />
+                  <button type="button" className="btn btn-ghost scan-btn" onClick={() => { setShowScanner(true); setScanning(true) }} title="Scan ISBN barcode">
+                    <Scan size={18} />
+                  </button>
+                </div>
                 <p className="borrow-form-hint-web"><Hash size={10} /> Enter 10-13 digit ISBN for exact match, or title for search</p>
               </div>
             </div>
@@ -346,6 +424,19 @@ export default function BorrowForm() {
           </form>
         )}
       </div>
+
+      <Modal open={showScanner} onClose={stopScanner} title="Scan ISBN Barcode">
+        {scanning && <div id="scanner-el" style={{ width: '100%', minHeight: 300 }} />}
+        {!scanning && showScanner && (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <p style={{ color: 'var(--text-muted)' }}>Camera access denied or unavailable.</p>
+            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setScanning(true)}>Retry</button>
+          </div>
+        )}
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <button className="btn btn-secondary" onClick={stopScanner}>Cancel</button>
+        </div>
+      </Modal>
     </div>
   )
 }
