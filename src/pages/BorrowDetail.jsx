@@ -173,9 +173,9 @@ export default function BorrowDetail() {
           </div>
         </div>
 
-        <div className="member-actions" style={{ padding: '0 16px 20px' }}>
+        <div className="member-actions">
           {borrow.status === 'borrowed' && (
-            <button className="btn btn-success" onClick={() => setReturnConfirm(true)} style={{ width: '100%', justifyContent: 'center' }}>
+            <button className="btn btn-success" onClick={() => setReturnConfirm(true)}>
               <Undo2 size={16} /> Return Book
             </button>
           )}

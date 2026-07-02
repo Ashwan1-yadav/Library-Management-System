@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../components/Toast'
-import { Book, User, Calendar, IndianRupee, ChevronLeft, ChevronRight, Bell, CheckCircle } from 'lucide-react'
+import { IndianRupee, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 function useIsMobile(breakpoint = 768) {
@@ -58,56 +58,20 @@ export default function Notifications() {
 
   const renderCard = (f) => (
     <div key={f.id} className={isMobile ? 'borrow-card-mobile' : 'list-card'} onClick={() => navigate(`/app/fines/${f.id}`)}>
-      {isMobile ? (
-        <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, width: '100%' }}>
+        {isMobile ? (
           <div style={{ width: 40, height: 40, borderRadius: 10, background: '#dc262615', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <IndianRupee size={18} style={{ color: '#dc2626' }} />
           </div>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {f.members?.name}
-              </span>
-              <span className="badge badge-danger" style={{ fontSize: 9, padding: '2px 6px', flexShrink: 0 }}>Unpaid</span>
-            </div>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Book size={10} /> {f.borrows?.books?.title}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Calendar size={10} /> Due: {f.borrows?.due_date ? new Date(f.borrows.due_date).toLocaleDateString() : 'N/A'}
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>₹{parseFloat(f.amount).toFixed(2)}</span>
-            </div>
-          </div>
-          <button className="btn btn-success btn-sm" style={{ fontSize: 11, padding: '4px 10px', minHeight: 0, borderRadius: 8, flexShrink: 0 }}
-            onClick={(e) => { e.stopPropagation(); setPayConfirm(f) }}>
-            <CheckCircle size={10} /> Pay
-          </button>
-        </>
-      ) : (
-        <>
+        ) : (
           <div className="list-card-avatar" style={{ background: '#dc2626' }}>
             <IndianRupee size={18} style={{ color: '#fff' }} />
           </div>
-          <div className="list-card-info">
-            <p className="list-card-title">{f.members?.name}</p>
-            <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Book size={11} /> {f.borrows?.books?.title}
-            </p>
-            <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Calendar size={11} /> Due: {f.borrows?.due_date ? new Date(f.borrows.due_date).toLocaleDateString() : 'N/A'}
-            </p>
-          </div>
-          <div className="list-card-meta">
-            <span className="list-card-amount" style={{ color: '#dc2626' }}>₹{parseFloat(f.amount).toFixed(2)}</span>
-            <span className="badge badge-danger">Unpaid</span>
-            <button className="btn btn-success btn-sm" style={{ marginTop: 4 }} onClick={(e) => { e.stopPropagation(); setPayConfirm(f) }}>
-              <CheckCircle size={12} /> Pay
-            </button>
-          </div>
-        </>
-      )}
+        )}
+        <span style={{ flex: 1, fontSize: isMobile ? 13 : 14, lineHeight: 1.4 }}>
+          <strong>{f.members?.name}</strong> have unpaid fine of <strong>₹{parseFloat(f.amount).toFixed(2)}</strong>
+        </span>
+      </div>
     </div>
   )
 

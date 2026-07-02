@@ -85,7 +85,7 @@ export default function MemberDetail() {
             <User size={36} />
           </div>
           <h1 className="member-name">{member.name}</h1>
-          <span className="badge badge-success" style={{ fontSize: 12, padding: '3px 10px' }}>Active Member</span>
+          <span className="badge badge-success">Active Member</span>
         </div>
 
         <div className="member-stats-row">
@@ -116,8 +116,8 @@ export default function MemberDetail() {
         </div>
 
         <div className="member-actions">
-          <Link to={`/app/members/${member.id}/edit`} className="btn btn-warning" style={{ width: '100%', justifyContent: 'center' }}><Edit size={16} /> Edit Member</Link>
-          <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)} style={{ width: '100%', justifyContent: 'center' }}><Trash2 size={16} /> Delete Member</button>
+          <Link to={`/app/members/${member.id}/edit`} className="btn btn-warning"><Edit size={16} /> Edit Member</Link>
+          <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)}><Trash2 size={16} /> Delete Member</button>
         </div>
 
         {borrows.length > 0 && (
@@ -128,20 +128,20 @@ export default function MemberDetail() {
                 {borrows.map(b => (
                   <div key={b.id} className="list-card" onClick={() => navigate(`/app/borrows/${b.id}`)}>
                     {b.books?.cover_image ? (
-                      <img src={b.books.cover_image} alt="" style={{ width: 32, height: 44, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                      <img src={b.books.cover_image} alt="" />
                     ) : (
-                      <div style={{ width: 32, height: 44, background: 'var(--border)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div className="list-card-thumb">
                         <Book size={12} color="var(--text-muted)" />
                       </div>
                     )}
                     <div className="list-card-info">
-                      <p className="list-card-title" style={{ fontSize: 12 }}>{b.books?.title}</p>
-                      <p className="list-card-sub" style={{ fontSize: 10 }}>
+                      <p className="list-card-title">{b.books?.title}</p>
+                      <p className="list-card-sub">
                         {new Date(b.borrow_date).toLocaleDateString()} → {b.return_date ? new Date(b.return_date).toLocaleDateString() : 'Ongoing'}
                       </p>
                     </div>
                     <div className="list-card-meta">
-                      <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: 10, padding: '2px 6px' }}>
+                      <span className={`badge ${b.status === 'borrowed' ? 'badge-warning' : 'badge-success'}`}>
                         {b.status}
                       </span>
                       <ArrowRight size={12} color="var(--text-muted)" />

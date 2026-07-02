@@ -84,7 +84,7 @@ export default function Books() {
       </div>
       <div className="search-bar">
         <input placeholder="Search by title, author or ISBN..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-        <button className="btn btn-primary" onClick={handleSearch}><Search size={16} /> Search</button>
+        <button className="btn btn-primary search-btn-round" onClick={handleSearch}><Search size={18} /></button>
       </div>
       {loading ? (
         <div className="loading-grid">

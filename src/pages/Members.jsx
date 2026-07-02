@@ -55,19 +55,19 @@ export default function Members() {
         <h1>Members</h1>
         <Link to="/app/members/new" className="btn btn-primary hide-mobile"><Plus size={16} /> Add Member</Link>
       </div>
-      <div className="filter-bar">
+      <div className="search-bar">
         <input placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadMembers(1)} />
-        <button className="btn btn-primary" onClick={() => loadMembers(1)}><Search size={16} /> Search</button>
+        <button className="btn btn-primary search-btn-round" onClick={() => loadMembers(1)}><Search size={18} /></button>
       </div>
 
       {loading ? (
-        <div className="list-cards">
+        <div className="members-grid">
           {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="list-card" style={{ pointerEvents: 'none' }}>
+            <div key={i} className="list-card skeleton" style={{ pointerEvents: 'none' }}>
               <div className="skeleton-circle" style={{ width: 44, height: 44 }} />
-              <div style={{ flex: 1 }}>
-                <div className="skeleton-bar" style={{ width: '70%', marginBottom: 6 }} />
-                <div className="skeleton-bar" style={{ width: '50%', height: 10 }} />
+              <div className="skeleton-body">
+                <div className="skeleton-text" />
+                <div className="skeleton-text short" />
               </div>
             </div>
           ))}
@@ -79,7 +79,7 @@ export default function Members() {
           <p>Try a different search or add a new member.</p>
         </div>
       ) : (
-        <div className="list-cards">
+        <div className="members-grid">
           {members.map((m, i) => (
             <div key={m.id} className="list-card" onClick={() => navigate(`/app/members/${m.id}`)}>
               <div className="list-card-avatar" style={{ background: avatarColors[i % avatarColors.length] }}>
