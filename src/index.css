@@ -2900,20 +2900,35 @@ table tr:last-child td { border-bottom: none; }
   margin-right: auto;
 }
 
-.borrow-form-success-web-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
+  .borrow-form-success-web-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
 
-.borrow-form-success-web-actions .btn {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 10px;
-}
+  .borrow-form-success-web-actions .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
 
-/* ========= Landing Mobile ========= */
+  @media (max-width: 768px) {
+    .borrow-form-success-web {
+      padding: 24px 16px !important;
+    }
+
+    .borrow-form-success-web-actions {
+      flex-direction: column;
+    }
+
+    .borrow-form-success-web-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* ========= Landing Mobile ========= */
 @media (max-width: 768px) {
   .landing-features { grid-template-columns: 1fr; }
   .landing-steps { grid-template-columns: 1fr; gap: 36px; }
