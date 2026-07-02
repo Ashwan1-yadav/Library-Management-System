@@ -2,13 +2,24 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Plus, Search, ChevronLeft, ChevronRight, Users, Mail, Phone, Calendar } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, Users, Mail, Phone, Calendar, ChevronRight as ChevronRightIcon } from 'lucide-react'
 import Fab from '../components/Fab'
 
 const PAGE_SIZE = 8
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 export default function Members() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const navigate = useNavigate()
   const location = useLocation()
   const [members, setMembers] = useState([])
@@ -71,24 +82,25 @@ export default function Members() {
         <div className="list-cards">
           {members.map((m, i) => (
             <div key={m.id} className="list-card" onClick={() => navigate(`/app/members/${m.id}`)}>
-              <div className="list-card-avatar" style={{ background: avatarColors[i % avatarColors.length] }}>
+              <div className="list-card-avatar" style={{ background: avatarColors[i % avatarColors.length], width: isMobile ? 40 : 44, height: isMobile ? 40 : 44, fontSize: isMobile ? 14 : 16 }}>
                 {m.name?.charAt(0)?.toUpperCase()}
               </div>
               <div className="list-card-info">
-                <p className="list-card-title">{m.name}</p>
-                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Mail size={11} /> {m.email}
+                <p className="list-card-title" style={isMobile ? { fontSize: 14 } : undefined}>{m.name}</p>
+                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: isMobile ? 12 : undefined }}>
+                  <Mail size={isMobile ? 10 : 11} /> {m.email}
                 </p>
                 {m.phone && (
-                  <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Phone size={11} /> {m.phone}
+                  <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: isMobile ? 12 : undefined }}>
+                    <Phone size={isMobile ? 10 : 11} /> {m.phone}
                   </p>
                 )}
               </div>
               <div className="list-card-meta">
-                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Calendar size={11} /> {new Date(m.membership_date).toLocaleDateString()}
+                <p className="list-card-sub" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: isMobile ? 11 : undefined }}>
+                  <Calendar size={isMobile ? 10 : 11} /> {new Date(m.membership_date).toLocaleDateString()}
                 </p>
+                {isMobile && <ChevronRightIcon size={14} style={{ color: 'var(--text-light)', marginTop: 4 }} />}
               </div>
             </div>
           ))}

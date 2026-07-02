@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library, ArrowRight } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Library, ArrowRight, BookOpen } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import Fab from '../components/Fab'
 import BorrowBook from '../components/BorrowBook'
@@ -10,8 +10,19 @@ import ConfirmDialog from '../components/ConfirmDialog'
 
 const PAGE_SIZE = 8
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 export default function Books() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [books, setBooks] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -90,26 +101,37 @@ export default function Books() {
           <div className="books-grid">
             {books.map(book => (
               <div key={book.id} className="book-card" onClick={() => navigate(`/app/books/${book.id}`)}>
-                <div className="book-card-img">
+                <div className="book-card-img" style={isMobile ? { height: 130 } : undefined}>
                   <img src={book.cover_image || placeholderImg} alt={book.title} loading="lazy" onError={(e) => { e.target.src = placeholderImg }} />
                 </div>
-                <div className="book-card-body">
+                <div className="book-card-body" style={isMobile ? { padding: '8px 10px 10px' } : undefined}>
                   <h3 className="book-card-title">{book.title}</h3>
-                  <p className="book-card-author">{book.author}</p>
+                  <p className="book-card-author" style={isMobile ? { fontSize: 11, marginBottom: 4 } : undefined}>{book.author}</p>
                   <div className="book-card-meta">
-                    {book.genre && <span className="badge badge-genre">{book.genre}</span>}
-                    <span className={`badge ${book.available_quantity > 0 ? 'badge-success' : 'badge-danger'}`}>
+                    {book.genre && <span className="badge badge-genre" style={isMobile ? { fontSize: 10, padding: '1px 6px' } : undefined}>{book.genre}</span>}
+                    <span className={`badge ${book.available_quantity > 0 ? 'badge-success' : 'badge-danger'}`} style={isMobile ? { fontSize: 10, padding: '1px 6px' } : undefined}>
                       {book.available_quantity} / {book.quantity}
                     </span>
                   </div>
                 </div>
-                <div className="book-card-actions" onClick={(e) => e.stopPropagation()}>
-                  {book.available_quantity > 0 && (
-                    <button className="btn-icon" title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={16} /></button>
-                  )}
-                  <Link to={`/app/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
-                  <button className="btn-icon danger" onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={16} /></button>
-                </div>
+                {!isMobile && (
+                  <div className="book-card-actions" onClick={(e) => e.stopPropagation()}>
+                    {book.available_quantity > 0 && (
+                      <button className="btn-icon" title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={16} /></button>
+                    )}
+                    <Link to={`/app/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
+                    <button className="btn-icon danger" onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={16} /></button>
+                  </div>
+                )}
+                {isMobile && (
+                  <div style={{ display: 'flex', gap: 4, padding: '4px 10px 8px', justifyContent: 'flex-end' }}>
+                    {book.available_quantity > 0 && (
+                      <button style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'var(--primary-light)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }} title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={14} /></button>
+                    )}
+                    <Link to={`/app/books/${book.id}/edit`} className="btn-icon" style={{ width: 30, height: 30, borderRadius: 8 }} title="Edit" onClick={(e) => e.stopPropagation()}><Edit size={14} /></Link>
+                    <button className="btn-icon danger" style={{ width: 30, height: 30, borderRadius: 8 }} onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={14} /></button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
