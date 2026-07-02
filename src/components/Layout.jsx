@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Book, Users, ArrowLeftRight, IndianRupee, BarChart3, LayoutDashboard, LogOut, Library, Bell, ChevronDown, UserCircle, AlertTriangle, Sun, Moon, Menu, X, MoreHorizontal } from 'lucide-react'
+import { Book, Users, ArrowLeftRight, IndianRupee, BarChart3, LayoutDashboard, LogOut, Library, Bell, ChevronDown, UserCircle, Sun, Moon, Menu, X, MoreHorizontal } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
 const desktopNavItems = [
@@ -30,6 +30,7 @@ const pageTitles = {
   '/app/fines': 'Fines',
   '/app/reports': 'Reports',
   '/app/profile': 'Admin Profile',
+  '/app/notifications': 'Notifications',
 }
 
 function getInitialTheme() {
@@ -80,12 +81,10 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showNotif, setShowNotif] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [theme, setTheme] = useState(getInitialTheme)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
-  const notifRef = useRef()
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const touchStartTime = useRef(0)
@@ -102,14 +101,6 @@ export default function Layout() {
     loadNotifications()
     const interval = setInterval(loadNotifications, 30000)
     return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   useEffect(() => {
@@ -232,34 +223,11 @@ export default function Layout() {
             <button className="navbar-icon-btn" onClick={toggleTheme} title="Toggle theme">
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <div className="navbar-notif" ref={notifRef}>
-              <button className="navbar-icon-btn" onClick={() => setShowNotif(!showNotif)}>
+            <div className="navbar-notif">
+              <button className="navbar-icon-btn" onClick={() => navigate('/app/notifications')} title="Notifications">
                 <Bell size={18} />
                 {notifications.length > 0 && <span className="notif-badge">{notifications.length}</span>}
               </button>
-              {showNotif && (
-                <div className="notif-dropdown">
-                  <div className="notif-header">
-                    <span>Alerts</span>
-                    <span className="notif-count">{notifications.length}</span>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <div className="notif-empty">No alerts</div>
-                  ) : (
-                    notifications.map((n, i) => (
-                      <div key={i} className="notif-item">
-                        <AlertTriangle size={16} className="notif-icon" />
-                        <div className="notif-text">
-                          <strong>{n.name}</strong> has ₹{n.total.toFixed(2)} in unpaid fines
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  <div className="notif-footer">
-                    <button className="btn btn-ghost btn-sm btn-block" onClick={() => navigate('/app/fines')}>View All Fines</button>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="navbar-user" onClick={() => setShowUserMenu(!showUserMenu)}>
               {profile?.avatar_url ? (

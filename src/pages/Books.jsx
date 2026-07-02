@@ -88,7 +88,7 @@ export default function Books() {
       </div>
       {loading ? (
         <div className="loading-grid">
-          {[1,2,3,4,5,6].map(i => <div key={i} className="book-card skeleton"><div className="skeleton-img" /><div className="skeleton-text" /><div className="skeleton-text short" /></div>)}
+          {[1,2,3,4,5,6].map(i => <div key={i} className="book-card skeleton"><div className="skeleton-img" /><div className="skeleton-body"><div className="skeleton-text" /><div className="skeleton-text short" /></div></div>)}
         </div>
       ) : books.length === 0 ? (
         <div className="empty-state">
@@ -121,15 +121,6 @@ export default function Books() {
                     )}
                     <Link to={`/app/books/${book.id}/edit`} className="btn-icon" title="Edit"><Edit size={16} /></Link>
                     <button className="btn-icon danger" onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={16} /></button>
-                  </div>
-                )}
-                {isMobile && (
-                  <div className="book-card-mobile-actions">
-                    {book.available_quantity > 0 && (
-                      <button title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={14} /></button>
-                    )}
-                    <Link to={`/app/books/${book.id}/edit`} title="Edit" onClick={(e) => e.stopPropagation()}><Edit size={14} /></Link>
-                    <button onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={14} /></button>
                   </div>
                 )}
               </div>

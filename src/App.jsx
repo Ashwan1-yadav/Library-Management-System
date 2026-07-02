@@ -19,6 +19,7 @@ import FineDetail from './pages/FineDetail'
 import Fines from './pages/Fines'
 import Reports from './pages/Reports'
 import AdminProfile from './pages/AdminProfile'
+import Notifications from './pages/Notifications'
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="fines" element={<Fines />} />
             <Route path="fines/:id" element={<FineDetail />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="profile" element={<AdminProfile />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
