@@ -120,20 +120,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #f0f9ff 100%);
+  background: var(--surface);
   padding: 24px;
 }
 
 [data-theme="dark"] .login-page {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c1929 100%);
+  background: var(--surface);
 }
 
 .login-illustrations {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
+  display: none;
 }
 
 .login-grid-bg {
@@ -178,13 +174,13 @@ body {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 44px 36px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
 }
 
 [data-theme="dark"] .login-form-card {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 .login-form-card::before {
@@ -4483,13 +4479,14 @@ table tr:last-child td { border-bottom: none; }
 
   /* ---------- Login Page (Mobile App Style) ---------- */
   .login-page {
+    height: 100dvh;
     align-items: flex-start;
     padding: 0;
-    background: var(--bg);
+    background: var(--surface);
   }
 
   [data-theme="dark"] .login-page {
-    background: var(--bg);
+    background: var(--surface);
   }
 
   .login-illustrations { display: none; }
