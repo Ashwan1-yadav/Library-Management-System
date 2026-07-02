@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Book, Users, ArrowLeftRight, DollarSign, BarChart3, LayoutDashboard, LogOut, Library, Bell, ChevronDown, UserCircle, AlertTriangle, Sun, Moon, Menu, X, MoreHorizontal } from 'lucide-react'
+import { Book, Users, ArrowLeftRight, IndianRupee, BarChart3, LayoutDashboard, LogOut, Library, Bell, ChevronDown, UserCircle, AlertTriangle, Sun, Moon, Menu, X, MoreHorizontal } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
 const desktopNavItems = [
@@ -9,7 +9,7 @@ const desktopNavItems = [
   { to: '/app/books', icon: Book, label: 'Books' },
   { to: '/app/members', icon: Users, label: 'Members' },
   { to: '/app/borrow-return', icon: ArrowLeftRight, label: 'Borrow & Return' },
-  { to: '/app/fines', icon: DollarSign, label: 'Fines' },
+  { to: '/app/fines', icon: IndianRupee, label: 'Fines' },
   { to: '/app/reports', icon: BarChart3, label: 'Reports' },
 ]
 
@@ -40,7 +40,7 @@ function getInitialTheme() {
 
 function MobileMoreMenu({ onClose, onNavigate, onLogout }) {
   const items = [
-    { to: '/app/fines', icon: DollarSign, label: 'Fines' },
+    { to: '/app/fines', icon: IndianRupee, label: 'Fines' },
     { to: '/app/reports', icon: BarChart3, label: 'Reports' },
     { to: '/app/profile', icon: UserCircle, label: 'My Profile' },
   ]

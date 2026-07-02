@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { Book, Users, ArrowLeftRight, DollarSign, TrendingUp, Plus, Eye, BookOpen, UserPlus } from 'lucide-react'
+import { Book, Users, ArrowLeftRight, IndianRupee, TrendingUp, Plus, Eye, BookOpen, UserPlus } from 'lucide-react'
 
 function useAnimatedNumber(target, duration = 1200, enabled = true) {
   const [display, setDisplay] = useState(0)
@@ -69,7 +69,7 @@ export default function Dashboard() {
     { icon: BookOpen, label: 'Total Books', value: animatedBooks, color: '#2563eb', change: '+12%' },
     { icon: Users, label: 'Members', value: animatedMembers, color: '#059669', change: '+8%' },
     { icon: ArrowLeftRight, label: 'Active Borrows', value: animatedBorrows, color: '#d97706', change: '-3%' },
-    { icon: DollarSign, label: 'Unpaid Fines', value: animatedFines, color: '#dc2626', change: '+5%' },
+    { icon: IndianRupee, label: 'Unpaid Fines', value: animatedFines, color: '#dc2626', change: '+5%' },
   ]
 
   const quickActions = [
