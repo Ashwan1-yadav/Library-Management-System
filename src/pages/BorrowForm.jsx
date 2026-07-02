@@ -252,12 +252,11 @@ export default function BorrowForm() {
                       onBlur={handleBookBlur}
                       placeholder="Enter ISBN or book title..."
                       required
-                      style={{ flex: 1, border: 'none', background: 'transparent', padding: '12px 0', fontSize: 16, fontFamily: 'inherit', color: 'var(--text)', outline: 'none' }}
                     />
                     <button
                       type="button"
+                      className="form-ios-scan-btn"
                       onClick={() => { setShowScanner(true); setScanning(true) }}
-                      style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 8, border: 'none', background: 'var(--primary-light)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       title="Scan ISBN barcode"
                     >
                       <Scan size={16} />

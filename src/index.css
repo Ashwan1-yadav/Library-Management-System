@@ -3680,18 +3680,43 @@ table tr:last-child td { border-bottom: none; }
   .book-card {
     border-radius: 14px;
     border: none;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow);
   }
 
   .book-card::before { display: none; }
-  .book-card:hover { transform: none; box-shadow: var(--shadow-md); }
+  .book-card:hover { transform: none; box-shadow: var(--shadow); }
 
   .book-card-img { height: 170px; }
-  .book-card-body { padding: 10px 12px 12px; }
+  .book-card-body { padding: 10px 12px 8px; }
   .book-card-title { font-size: 13px; }
-  .book-card-author { font-size: 12px; margin-bottom: 6px; }
+  .book-card-author { font-size: 12px; margin-bottom: 4px; }
   .book-card-meta .badge { font-size: 11px; padding: 2px 8px; }
   .book-card-actions { opacity: 1; top: 6px; right: 6px; }
+
+  .book-card-mobile-actions {
+    display: flex;
+    gap: 6px;
+    padding: 2px 12px 10px;
+    justify-content: flex-end;
+  }
+
+  .book-card-mobile-actions button,
+  .book-card-mobile-actions a {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .book-card-mobile-actions button:active { transform: scale(0.85); }
 
   .btn-icon {
     width: 34px;
@@ -4171,6 +4196,25 @@ table tr:last-child td { border-bottom: none; }
   .form-ios-row input::placeholder {
     color: var(--text-muted);
     opacity: 0.6;
+  }
+
+  .form-ios-scan-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary-light);
+    color: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+  }
+
+  .form-ios-scan-btn:active {
+    transform: scale(0.85);
   }
 
   .borrow-form-error {

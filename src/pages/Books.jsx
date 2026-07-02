@@ -101,15 +101,15 @@ export default function Books() {
           <div className="books-grid">
             {books.map(book => (
               <div key={book.id} className="book-card" onClick={() => navigate(`/app/books/${book.id}`)}>
-                <div className="book-card-img" style={isMobile ? { height: 130 } : undefined}>
+                <div className="book-card-img">
                   <img src={book.cover_image || placeholderImg} alt={book.title} loading="lazy" onError={(e) => { e.target.src = placeholderImg }} />
                 </div>
-                <div className="book-card-body" style={isMobile ? { padding: '8px 10px 10px' } : undefined}>
+                <div className="book-card-body">
                   <h3 className="book-card-title">{book.title}</h3>
-                  <p className="book-card-author" style={isMobile ? { fontSize: 11, marginBottom: 4 } : undefined}>{book.author}</p>
+                  <p className="book-card-author">{book.author}</p>
                   <div className="book-card-meta">
-                    {book.genre && <span className="badge badge-genre" style={isMobile ? { fontSize: 10, padding: '1px 6px' } : undefined}>{book.genre}</span>}
-                    <span className={`badge ${book.available_quantity > 0 ? 'badge-success' : 'badge-danger'}`} style={isMobile ? { fontSize: 10, padding: '1px 6px' } : undefined}>
+                    {book.genre && <span className="badge badge-genre">{book.genre}</span>}
+                    <span className={`badge ${book.available_quantity > 0 ? 'badge-success' : 'badge-danger'}`}>
                       {book.available_quantity} / {book.quantity}
                     </span>
                   </div>
@@ -124,12 +124,12 @@ export default function Books() {
                   </div>
                 )}
                 {isMobile && (
-                  <div style={{ display: 'flex', gap: 4, padding: '4px 10px 8px', justifyContent: 'flex-end' }}>
+                  <div className="book-card-mobile-actions">
                     {book.available_quantity > 0 && (
-                      <button style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'var(--primary-light)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }} title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={14} /></button>
+                      <button title="Borrow" onClick={(e) => { e.stopPropagation(); setBorrowBook(book) }}><ArrowRight size={14} /></button>
                     )}
-                    <Link to={`/app/books/${book.id}/edit`} className="btn-icon" style={{ width: 30, height: 30, borderRadius: 8 }} title="Edit" onClick={(e) => e.stopPropagation()}><Edit size={14} /></Link>
-                    <button className="btn-icon danger" style={{ width: 30, height: 30, borderRadius: 8 }} onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={14} /></button>
+                    <Link to={`/app/books/${book.id}/edit`} title="Edit" onClick={(e) => e.stopPropagation()}><Edit size={14} /></Link>
+                    <button onClick={(e) => handleDelete(e, book.id)} title="Delete"><Trash2 size={14} /></button>
                   </div>
                 )}
               </div>
